@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,7 +8,11 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
     :root {
       --bg: #0f1117;
@@ -182,14 +187,18 @@
     .spinner {
       width: 16px;
       height: 16px;
-      border: 2px solid rgba(255,255,255,0.3);
+      border: 2px solid rgba(255, 255, 255, 0.3);
       border-top-color: #fff;
       border-radius: 50%;
       animation: spin 0.6s linear infinite;
       display: none;
     }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
 
     /* Toast / Resultado */
     .toast {
@@ -204,8 +213,15 @@
     }
 
     @keyframes slideIn {
-      from { opacity: 0; transform: translateY(-8px); }
-      to { opacity: 1; transform: translateY(0); }
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
     }
 
     .toast.success {
@@ -269,167 +285,179 @@
       margin-right: 6px;
     }
 
-    .status-dot.connected { background: var(--primary); }
-    .status-dot.disconnected { background: var(--error); }
+    .status-dot.connected {
+      background: var(--primary);
+    }
+
+    .status-dot.disconnected {
+      background: var(--error);
+    }
 
     @media (max-width: 480px) {
-      .row { grid-template-columns: 1fr; }
-      .card { padding: 20px; }
+      .row {
+        grid-template-columns: 1fr;
+      }
+
+      .card {
+        padding: 20px;
+      }
     }
   </style>
 </head>
+
 <body>
 
-<div class="container">
-  <div class="logo">
-    <h1>🌱 Hortas</h1>
-    <p>Painel de teste — Cadastro de Estoque</p>
-  </div>
-
-  <div class="card">
-    <!-- Config da API -->
-    <div class="config-section">
-      <div class="config-header" onclick="toggleConfig()">
-        <span>⚙️ Configuração da API</span>
-        <span class="config-arrow" id="configArrow">▼</span>
-      </div>
-      <div class="config-body" id="configBody">
-        <div class="field">
-          <label for="apiUrl">URL da API</label>
-          <input type="text" id="apiUrl" value="http://localhost:3000" placeholder="http://localhost:3000" />
-        </div>
-        <div class="field">
-          <label for="jwtToken">Token JWT (Bearer)</label>
-          <input type="text" id="jwtToken" placeholder="Cole seu token JWT aqui..." />
-        </div>
-      </div>
+  <div class="container">
+    <div class="logo">
+      <h1>🌱 Hortas</h1>
+      <p>Painel de teste — Cadastro de Estoque</p>
     </div>
 
-    <div class="divider"></div>
-
-    <!-- Formulário -->
-    <form id="estoqueForm" onsubmit="enviarEstoque(event)">
-      <div class="section-title">Dados do Estoque</div>
-
-      <div class="row">
-        <div class="field">
-          <label for="hortas_id_hortas">ID da Horta <span class="required">*</span></label>
-          <input type="number" id="hortas_id_hortas" placeholder="Ex: 1" required />
+    <div class="card">
+      <!-- Config da API -->
+      <div class="config-section">
+        <div class="config-header" onclick="toggleConfig()">
+          <span>⚙️ Configuração da API</span>
+          <span class="config-arrow" id="configArrow">▼</span>
         </div>
-        <div class="field">
-          <label for="produto_id_produto">ID do Produto <span class="required">*</span></label>
-          <input type="number" id="produto_id_produto" placeholder="Ex: 5" required />
-        </div>
-      </div>
-
-      <div class="field">
-        <label for="ds_quantiade">Quantidade <span class="required">*</span></label>
-        <input type="number" id="ds_quantiade" placeholder="Ex: 100" required />
-      </div>
-
-      <div class="divider"></div>
-      <div class="section-title">Datas (opcionais)</div>
-
-      <div class="field">
-        <label for="dt_validade">Data de Validade</label>
-        <input type="date" id="dt_validade" />
-      </div>
-
-      <div class="row">
-        <div class="field">
-          <label for="dt_colheita">Data de Colheita</label>
-          <input type="date" id="dt_colheita" />
-        </div>
-        <div class="field">
-          <label for="dt_plantio">Data de Plantio</label>
-          <input type="date" id="dt_plantio" />
+        <div class="config-body" id="configBody">
+          <div class="field">
+            <label for="apiUrl">URL da API</label>
+            <input type="text" id="apiUrl" placeholder="http://localhost:3000" />
+          </div>
+          <div class="field">
+            <label for="jwtToken">Token JWT (Bearer)</label>
+            <input type="text" id="jwtToken" placeholder="Cole seu token JWT aqui..." />
+          </div>
         </div>
       </div>
 
       <div class="divider"></div>
 
-      <button type="submit" class="btn btn-primary" id="submitBtn">
-        <span class="spinner" id="spinner"></span>
-        <span id="btnText">Cadastrar Estoque</span>
-      </button>
+      <!-- Formulário -->
+      <form id="estoqueForm" onsubmit="enviarEstoque(event)">
+        <div class="section-title">Dados do Estoque</div>
 
-      <div class="toast" id="toast"></div>
-    </form>
+        <div class="row">
+          <div class="field">
+            <label for="hortas_id_hortas">ID da Horta <span class="required">*</span></label>
+            <input type="number" id="hortas_id_hortas" placeholder="Ex: 1" required />
+          </div>
+          <div class="field">
+            <label for="produto_id_produto">ID do Produto <span class="required">*</span></label>
+            <input type="number" id="produto_id_produto" placeholder="Ex: 5" required />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="ds_quantiade">Quantidade <span class="required">*</span></label>
+          <input type="number" id="ds_quantiade" placeholder="Ex: 100" required />
+        </div>
+
+        <div class="divider"></div>
+        <div class="section-title">Datas (opcionais)</div>
+
+        <div class="field">
+          <label for="dt_validade">Data de Validade</label>
+          <input type="date" id="dt_validade" />
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="dt_colheita">Data de Colheita</label>
+            <input type="date" id="dt_colheita" />
+          </div>
+          <div class="field">
+            <label for="dt_plantio">Data de Plantio</label>
+            <input type="date" id="dt_plantio" />
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <button type="submit" class="btn btn-primary" id="submitBtn">
+          <span class="spinner" id="spinner"></span>
+          <span id="btnText">Cadastrar Estoque</span>
+        </button>
+
+        <div class="toast" id="toast"></div>
+      </form>
+    </div>
   </div>
-</div>
 
-<script>
-  // Toggle config section
-  function toggleConfig() {
-    const body = document.getElementById('configBody');
-    const arrow = document.getElementById('configArrow');
-    body.classList.toggle('open');
-    arrow.textContent = body.classList.contains('open') ? '▲' : '▼';
-  }
-
-  // Abrir config por padrão para poder colar o token
-  document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('configBody').classList.add('open');
-    document.getElementById('configArrow').textContent = '▲';
-  });
-
-  // Enviar dados para a API
-  async function enviarEstoque(e) {
-    e.preventDefault();
-
-    const toast = document.getElementById('toast');
-    const spinner = document.getElementById('spinner');
-    const btnText = document.getElementById('btnText');
-    const submitBtn = document.getElementById('submitBtn');
-
-    // UI: loading
-    toast.className = 'toast';
-    toast.style.display = 'none';
-    spinner.style.display = 'inline-block';
-    btnText.textContent = 'Enviando...';
-    submitBtn.disabled = true;
-
-    const apiUrl = document.getElementById('apiUrl').value.replace(/\/+$/, '');
-    const token = document.getElementById('jwtToken').value.trim();
-
-    const body = {
-      hortas_id_hortas: document.getElementById('hortas_id_hortas').value,
-      produto_id_produto: document.getElementById('produto_id_produto').value,
-      ds_quantiade: document.getElementById('ds_quantiade').value,
-      dt_validade: document.getElementById('dt_validade').value || null,
-      dt_colheita: document.getElementById('dt_colheita').value || null,
-      dt_plantio: document.getElementById('dt_plantio').value || null,
-    };
-
-    try {
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const res = await fetch(`${apiUrl}/api/cadastro-estoque`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        toast.className = 'toast success';
-        toast.textContent = `✅ ${data.mensagem}`;
-      } else {
-        toast.className = 'toast error';
-        toast.textContent = `❌ ${data.mensagem || 'Erro desconhecido'}`;
-      }
-    } catch (err) {
-      toast.className = 'toast error';
-      toast.textContent = `❌ Erro de conexão: ${err.message}`;
-    } finally {
-      spinner.style.display = 'none';
-      btnText.textContent = 'Cadastrar Estoque';
-      submitBtn.disabled = false;
+  <script>
+    // Toggle config section
+    function toggleConfig() {
+      const body = document.getElementById('configBody');
+      const arrow = document.getElementById('configArrow');
+      body.classList.toggle('open');
+      arrow.textContent = body.classList.contains('open') ? '▲' : '▼';
     }
-  }
-</script>
+
+    // Abrir config por padrão para poder colar o token
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('configBody').classList.add('open');
+      document.getElementById('configArrow').textContent = '▲';
+    });
+
+    // Enviar dados para a API
+    async function enviarEstoque(e) {
+      e.preventDefault();
+
+      const toast = document.getElementById('toast');
+      const spinner = document.getElementById('spinner');
+      const btnText = document.getElementById('btnText');
+      const submitBtn = document.getElementById('submitBtn');
+
+      // UI: loading
+      toast.className = 'toast';
+      toast.style.display = 'none';
+      spinner.style.display = 'inline-block';
+      btnText.textContent = 'Enviando...';
+      submitBtn.disabled = true;
+
+      const apiUrl = (document.getElementById('apiUrl').value.trim() || window.location.origin).replace(/\/+$/, '');
+      const token = document.getElementById('jwtToken').value.trim();
+
+      const body = {
+        hortas_id_hortas: document.getElementById('hortas_id_hortas').value,
+        produto_id_produto: document.getElementById('produto_id_produto').value,
+        ds_quantiade: document.getElementById('ds_quantiade').value,
+        dt_validade: document.getElementById('dt_validade').value || null,
+        dt_colheita: document.getElementById('dt_colheita').value || null,
+        dt_plantio: document.getElementById('dt_plantio').value || null,
+      };
+
+      try {
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch(`${apiUrl}/api/cadastro-estoque`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(body),
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          toast.className = 'toast success';
+          toast.textContent = `✅ ${data.mensagem}`;
+        } else {
+          toast.className = 'toast error';
+          toast.textContent = `❌ ${data.mensagem || 'Erro desconhecido'}`;
+        }
+      } catch (err) {
+        toast.className = 'toast error';
+        toast.textContent = `❌ Erro de conexão: ${err.message}`;
+      } finally {
+        spinner.style.display = 'none';
+        btnText.textContent = 'Cadastrar Estoque';
+        submitBtn.disabled = false;
+      }
+    }
+  </script>
 
 </body>
+
 </html>
