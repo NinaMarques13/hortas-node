@@ -5,6 +5,7 @@
 // Carrega as variáveis de ambiente ANTES de tudo
 require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env') });
 
+const path = require('path');
 const express = require('express');
 const corsMiddleware = require('./middlewares/cors');
 const cadastroEstoqueRoutes = require('./routes/cadastroEstoque');
@@ -19,14 +20,19 @@ app.use(corsMiddleware);
 app.use(express.json());
 
 // =====================================================
-// Rotas
+// Servir arquivos estáticos (front-end de teste)
+// =====================================================
+app.use(express.static(path.join(__dirname, '..', 'public')));
+
+// =====================================================
+// Rotas da API
 // =====================================================
 app.use('/api/cadastro-estoque', cadastroEstoqueRoutes);
 
 // =====================================================
 // Rota de health check
 // =====================================================
-app.get('/', (_req, res) => {
+app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', mensagem: 'API Node.js funcionando!' });
 });
 
