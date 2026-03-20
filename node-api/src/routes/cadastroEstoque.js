@@ -1,19 +1,30 @@
 // =====================================================
-// 📦 Rota: Cadastro de Estoque
-// Equivale ao cadastro_estoque.php
+// 📦 Rota: Cadastro de Estoque (In-Memory)
+// Armazena em variável para fins de aprendizado
 // =====================================================
 
 const express = require('express');
 const router = express.Router();
-const pool = require('../db');
 const validarTokenJwt = require('../middlewares/validadorJwt');
 
-// POST /api/cadastro-estoque
+// "Banco de dados" em memória
+let estoques = [];
+let proximoId = 1;
+
+// GET /api/cadastro-estoque — Listar todos os itens
+router.get('/', (_req, res) => {
+  res.json({
+    status: 'sucesso',
+    total: estoques.length,
+    dados: estoques,
+  });
+});
+
+// POST /api/cadastro-estoque — Cadastrar novo item
 router.post('/', validarTokenJwt, async (req, res) => {
   const dados = req.body;
 
   // --- Validação dos dados recebidos ---
-  // Verifica se os campos obrigatórios foram enviados
   if (
     !dados.hortas_id_hortas ||
     !dados.produto_id_produto ||
@@ -35,41 +46,45 @@ router.post('/', validarTokenJwt, async (req, res) => {
     });
   }
 
-  try {
-    // A query insere o 'produto_id_produto' em vez de 'nm_item'.
-    // Os campos 'unidade_medida' e 'descricao' pertencem à tabela 'produtos'.
-    const sql = `INSERT INTO estoques (hortas_id_hortas, produto_id_produto, ds_quantiade, dt_validade, dt_colheita, dt_plantio)
-                 VALUES (?, ?, ?, ?, ?, ?)`;
+  // Cria o objeto e salva no array
+  const novoItem = {
+    id: proximoId++,
+    hortas_id_hortas: parseInt(dados.hortas_id_hortas, 10),
+    produto_id_produto: parseInt(dados.produto_id_produto, 10),
+    ds_quantiade: dados.ds_quantiade,
+    dt_validade: dados.dt_validade || null,
+    dt_colheita: dados.dt_colheita || null,
+    dt_plantio: dados.dt_plantio || null,
+    id_produtor: idProdutor,
+    criado_em: new Date().toISOString(),
+  };
 
-    const valores = [
-      parseInt(dados.hortas_id_hortas, 10),
-      parseInt(dados.produto_id_produto, 10),
-      dados.ds_quantiade,
-      dados.dt_validade || null,
-      dados.dt_colheita || null,
-      dados.dt_plantio || null,
-    ];
+  estoques.push(novoItem);
 
-    const [resultado] = await pool.execute(sql, valores);
+  return res.status(201).json({
+    status: 'sucesso',
+    mensagem: 'Lote de produto cadastrado no estoque com sucesso!',
+    item: novoItem,
+  });
+});
 
-    if (resultado.affectedRows > 0) {
-      return res.status(201).json({
-        status: 'sucesso',
-        mensagem: 'Lote de produto cadastrado no estoque com sucesso!',
-      });
-    } else {
-      return res.status(503).json({
-        status: 'erro',
-        mensagem: 'Não foi possível cadastrar o lote no estoque.',
-      });
-    }
-  } catch (err) {
-    console.error('Erro no banco de dados:', err.message);
-    return res.status(500).json({
+// DELETE /api/cadastro-estoque/:id — Remover item
+router.delete('/:id', validarTokenJwt, (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const index = estoques.findIndex(e => e.id === id);
+
+  if (index === -1) {
+    return res.status(404).json({
       status: 'erro',
-      mensagem: 'Erro no banco de dados: ' + err.message,
+      mensagem: 'Item não encontrado.',
     });
   }
+
+  estoques.splice(index, 1);
+  return res.json({
+    status: 'sucesso',
+    mensagem: 'Item removido com sucesso!',
+  });
 });
 
 module.exports = router;
