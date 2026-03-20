@@ -387,10 +387,29 @@
 
         <div class="toast" id="toast"></div>
       </form>
+
+      <div class="divider"></div>
+
+      <!-- Lista de Estoque -->
+      <div class="section-title">Itens Cadastrados</div>
+      <div id="listaEstoque" style="font-size:0.8125rem; color:var(--text-muted);">
+        Nenhum item cadastrado ainda.
+      </div>
     </div>
   </div>
 
   <script>
+    function getApiUrl() {
+      return (document.getElementById('apiUrl').value.trim() || window.location.origin).replace(/\/+$/, '');
+    }
+
+    function getHeaders() {
+      const headers = { 'Content-Type': 'application/json' };
+      const token = document.getElementById('jwtToken').value.trim();
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      return headers;
+    }
+
     // Toggle config section
     function toggleConfig() {
       const body = document.getElementById('configBody');
@@ -399,7 +418,7 @@
       arrow.textContent = body.classList.contains('open') ? '▲' : '▼';
     }
 
-    // Abrir config por padrão para poder colar o token
+    // Abrir config por padrão
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('configBody').classList.add('open');
       document.getElementById('configArrow').textContent = '▲';
@@ -407,22 +426,69 @@
 
     // Gerar token JWT de teste
     async function gerarToken() {
-      const apiUrl = (document.getElementById('apiUrl').value.trim() || window.location.origin).replace(/\/+$/, '');
       const tokenInput = document.getElementById('jwtToken');
-
       try {
         tokenInput.value = 'Gerando...';
-        const res = await fetch(`${apiUrl}/api/gerar-token-teste`);
+        const res = await fetch(`${getApiUrl()}/api/gerar-token-teste`);
         const data = await res.json();
-
         if (res.ok && data.token) {
           tokenInput.value = data.token;
+          carregarEstoque(); // carrega a lista ao ter o token
         } else {
           tokenInput.value = '';
           alert('Erro ao gerar token: ' + (data.mensagem || 'Desconhecido'));
         }
       } catch (err) {
         tokenInput.value = '';
+        alert('Erro de conexão: ' + err.message);
+      }
+    }
+
+    // Carregar lista de estoque
+    async function carregarEstoque() {
+      const lista = document.getElementById('listaEstoque');
+      try {
+        const res = await fetch(`${getApiUrl()}/api/cadastro-estoque`);
+        const data = await res.json();
+
+        if (!data.dados || data.dados.length === 0) {
+          lista.innerHTML = '<p style="text-align:center; padding:12px 0;">Nenhum item cadastrado ainda.</p>';
+          return;
+        }
+
+        lista.innerHTML = data.dados.map(item => `
+          <div style="background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <strong style="color:var(--text);">#${item.id}</strong> —
+              Horta: ${item.hortas_id_hortas} |
+              Produto: ${item.produto_id_produto} |
+              Qtd: ${item.ds_quantiade}
+              ${item.dt_validade ? `<br><small>Validade: ${item.dt_validade}</small>` : ''}
+            </div>
+            <button onclick="excluirItem(${item.id})" style="background:var(--error-bg); border:1px solid rgba(239,68,68,0.3); color:#f87171; border-radius:6px; padding:6px 10px; cursor:pointer; font-size:0.75rem; font-family:'Inter',sans-serif;">
+              ✕
+            </button>
+          </div>
+        `).join('');
+      } catch (err) {
+        lista.innerHTML = `<p style="color:#f87171;">Erro ao carregar: ${err.message}</p>`;
+      }
+    }
+
+    // Excluir item
+    async function excluirItem(id) {
+      try {
+        const res = await fetch(`${getApiUrl()}/api/cadastro-estoque/${id}`, {
+          method: 'DELETE',
+          headers: getHeaders(),
+        });
+        const data = await res.json();
+        if (res.ok) {
+          carregarEstoque();
+        } else {
+          alert(data.mensagem || 'Erro ao excluir');
+        }
+      } catch (err) {
         alert('Erro de conexão: ' + err.message);
       }
     }
@@ -436,15 +502,11 @@
       const btnText = document.getElementById('btnText');
       const submitBtn = document.getElementById('submitBtn');
 
-      // UI: loading
       toast.className = 'toast';
       toast.style.display = 'none';
       spinner.style.display = 'inline-block';
       btnText.textContent = 'Enviando...';
       submitBtn.disabled = true;
-
-      const apiUrl = (document.getElementById('apiUrl').value.trim() || window.location.origin).replace(/\/+$/, '');
-      const token = document.getElementById('jwtToken').value.trim();
 
       const body = {
         hortas_id_hortas: document.getElementById('hortas_id_hortas').value,
@@ -456,12 +518,9 @@
       };
 
       try {
-        const headers = { 'Content-Type': 'application/json' };
-        if (token) headers['Authorization'] = `Bearer ${token}`;
-
-        const res = await fetch(`${apiUrl}/api/cadastro-estoque`, {
+        const res = await fetch(`${getApiUrl()}/api/cadastro-estoque`, {
           method: 'POST',
-          headers,
+          headers: getHeaders(),
           body: JSON.stringify(body),
         });
 
@@ -470,6 +529,8 @@
         if (res.ok) {
           toast.className = 'toast success';
           toast.textContent = `✅ ${data.mensagem}`;
+          document.getElementById('estoqueForm').reset();
+          carregarEstoque(); // atualiza a lista
         } else {
           toast.className = 'toast error';
           toast.textContent = `❌ ${data.mensagem || 'Erro desconhecido'}`;
@@ -483,6 +544,9 @@
         submitBtn.disabled = false;
       }
     }
+
+    // Carrega a lista ao abrir a página
+    carregarEstoque();
   </script>
 
 </body>
