@@ -37,6 +37,26 @@ app.get('/api/health', (_req, res) => {
 });
 
 // =====================================================
+// ⚠️ Rota de teste: Gerar token JWT (REMOVER EM PRODUÇÃO)
+// =====================================================
+app.get('/api/gerar-token-teste', (_req, res) => {
+  const jwt = require('jsonwebtoken');
+  const secret = process.env.JWT_SECRET_KEY;
+
+  if (!secret) {
+    return res.status(500).json({ status: 'erro', mensagem: 'JWT_SECRET_KEY não configurada.' });
+  }
+
+  const token = jwt.sign(
+    { data: { id_produtor: 1, nome: 'Produtor Teste' } },
+    secret,
+    { algorithm: 'HS256', expiresIn: '24h' }
+  );
+
+  res.json({ status: 'sucesso', token });
+});
+
+// =====================================================
 // Inicia o servidor
 // =====================================================
 app.listen(PORT, () => {

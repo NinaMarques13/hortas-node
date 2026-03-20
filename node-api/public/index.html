@@ -326,9 +326,14 @@
             <input type="text" id="apiUrl" placeholder="http://localhost:3000" />
           </div>
           <div class="field">
-            <label for="jwtToken">Token JWT (Bearer)</label>
-            <input type="text" id="jwtToken" placeholder="Cole seu token JWT aqui..." />
+          <label for="jwtToken">Token JWT (Bearer)</label>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="jwtToken" placeholder="Cole seu token JWT aqui..." style="flex:1;" />
+            <button type="button" class="btn btn-primary" onclick="gerarToken()" style="width:auto; padding:10px 16px; font-size:0.75rem;">
+              Gerar Token
+            </button>
           </div>
+        </div>
         </div>
       </div>
 
@@ -399,6 +404,28 @@
       document.getElementById('configBody').classList.add('open');
       document.getElementById('configArrow').textContent = '▲';
     });
+
+    // Gerar token JWT de teste
+    async function gerarToken() {
+      const apiUrl = (document.getElementById('apiUrl').value.trim() || window.location.origin).replace(/\/+$/, '');
+      const tokenInput = document.getElementById('jwtToken');
+
+      try {
+        tokenInput.value = 'Gerando...';
+        const res = await fetch(`${apiUrl}/api/gerar-token-teste`);
+        const data = await res.json();
+
+        if (res.ok && data.token) {
+          tokenInput.value = data.token;
+        } else {
+          tokenInput.value = '';
+          alert('Erro ao gerar token: ' + (data.mensagem || 'Desconhecido'));
+        }
+      } catch (err) {
+        tokenInput.value = '';
+        alert('Erro de conexão: ' + err.message);
+      }
+    }
 
     // Enviar dados para a API
     async function enviarEstoque(e) {
