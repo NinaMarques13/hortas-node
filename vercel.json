@@ -1,8 +1,27 @@
 {
-    "functions":{
-        "api/**/*.php": {
-            
-            "runtime": "vercel-php@0.7.4"
-        }
+  "version": 2,
+  "builds": [
+    {
+      "src": "node-api/src/server.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "node-api/public/**",
+      "use": "@vercel/static"
     }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "node-api/src/server.js"
+    },
+    {
+      "src": "/(css|js)/(.*)",
+      "dest": "node-api/public/$1/$2"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "node-api/public/index.html"
+    }
+  ]
 }

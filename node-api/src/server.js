@@ -46,8 +46,12 @@ app.get('/api/health', (_req, res) => {
 });
 
 // =====================================================
-// Inicia o servidor
+// Inicia o servidor (local) / exporta (Vercel)
 // =====================================================
-app.listen(PORT, () => {
-  console.log(`✅ Servidor rodando em http://localhost:${PORT}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`✅ Servidor rodando em http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
