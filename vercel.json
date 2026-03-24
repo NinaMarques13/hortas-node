@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "installCommand": "cd node-api && npm install",
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/api/(.*)", "dest": "/api/index.js" },
+    { "src": "/(.*)", "dest": "/api/index.js" }
+  ]
+}
