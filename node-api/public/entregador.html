@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hortas — Entregador</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --verde: #1a4a1a;
+    --verde-meio: #2d6e2d;
+    --verde-claro: #4caf50;
+    --lima: #a8d500;
+    --laranja: #f59e0b;
+    --creme: #f5f0e8;
+    --branco: #fafaf7;
+    --cinza: #6b7280;
+    --vermelho: #dc2626;
+    --azul: #2563eb;
+    --sombra: rgba(26,74,26,0.12);
+  }
+
+  body { font-family: 'DM Mono', monospace; background: var(--creme); color: var(--verde); min-height: 100vh; }
+
+  /* LOGIN */
+  #login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1a3a1a 0%, #2d5a2d 100%);
+  }
+
+  .login-box {
+    background: var(--branco);
+    border-radius: 24px;
+    padding: 48px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 32px 64px rgba(0,0,0,0.3);
+  }
+
+  .login-logo { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; color: var(--verde); margin-bottom: 4px; }
+  .login-logo span { color: var(--lima); }
+  .login-role { font-size: 12px; color: var(--cinza); margin-bottom: 32px; text-transform: uppercase; letter-spacing: 1px; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 28px; }
+  .tab {
+    flex: 1; padding: 10px; border: 2px solid #e5e7eb; border-radius: 10px;
+    background: transparent; font-family: 'DM Mono', monospace; font-size: 12px;
+    color: var(--cinza); cursor: pointer; transition: all 0.2s;
+  }
+  .tab.active { border-color: var(--verde); background: var(--verde); color: var(--lima); }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--cinza); margin-bottom: 6px; }
+  .field input {
+    width: 100%; padding: 12px 14px; border: 2px solid #e5e7eb; border-radius: 10px;
+    font-family: 'DM Mono', monospace; font-size: 14px; color: var(--verde); background: var(--branco);
+    transition: border-color 0.2s; outline: none;
+  }
+  .field input:focus { border-color: var(--verde-claro); }
+
+  .btn-primary {
+    width: 100%; padding: 14px; background: var(--verde); color: var(--lima);
+    border: none; border-radius: 10px; font-family: 'Syne', sans-serif;
+    font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 8px;
+  }
+  .btn-primary:hover { background: var(--verde-meio); }
+
+  .msg-erro { color: var(--vermelho); font-size: 12px; margin-top: 10px; display: none; }
+
+  /* APP */
+  #app-screen { display: none; }
+
+  header {
+    background: var(--verde); padding: 0 32px; display: flex;
+    align-items: center; justify-content: space-between; height: 60px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--branco); }
+  .logo span { color: var(--lima); }
+  .header-info { display: flex; align-items: center; gap: 16px; }
+  .badge-role { background: var(--lima); color: var(--verde); padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .btn-sair { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px 14px; border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 12px; cursor: pointer; }
+
+  main { padding: 32px; max-width: 700px; margin: 0 auto; }
+
+  .page-title { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+  .page-sub { color: var(--cinza); font-size: 13px; margin-bottom: 28px; }
+
+  /* STATUS INDICATOR */
+  .status-bar {
+    background: var(--branco); border-radius: 16px; padding: 20px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 4px 16px var(--sombra); margin-bottom: 24px;
+  }
+  .status-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--verde-claro); margin-right: 10px; animation: pulse-dot 2s infinite; }
+  .status-dot.ocupado { background: var(--laranja); animation: none; }
+  .status-label { font-size: 13px; color: var(--cinza); display: flex; align-items: center; }
+  .status-label strong { color: var(--verde); margin-left: 4px; }
+
+  @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(1.2)} }
+
+  /* CARD ENTREGA */
+  .card-entrega {
+    background: var(--branco); border-radius: 20px; padding: 28px;
+    box-shadow: 0 4px 16px var(--sombra); margin-bottom: 24px;
+    border-left: 5px solid var(--lima);
+    animation: fadeUp 0.4s ease;
+  }
+
+  .card-entrega.em-andamento { border-left-color: var(--laranja); }
+
+  .entrega-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+  .entrega-id { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; }
+  .entrega-status { font-size: 11px; padding: 5px 12px; border-radius: 20px; font-weight: 600; }
+  .s-pendente { background: #fef3c7; color: #92400e; }
+  .s-aceito { background: #dbeafe; color: #1e40af; }
+  .s-a_caminho { background: #ede9fe; color: #5b21b6; }
+  .s-entregue { background: #dcfce7; color: #166534; }
+
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .info-item label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--cinza); display: block; margin-bottom: 4px; }
+  .info-item span { font-size: 14px; color: var(--verde); font-weight: 500; }
+
+  .itens-lista { background: var(--creme); border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+  .itens-titulo { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--cinza); margin-bottom: 12px; }
+  .item-linha { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid #ebe8e0; }
+  .item-linha:last-child { border-bottom: none; }
+
+  .acoes { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .btn-aceitar { flex: 1; padding: 14px; background: var(--verde); color: var(--lima); border: none; border-radius: 12px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .btn-aceitar:hover { background: var(--verde-meio); }
+
+  .btn-caminho { flex: 1; padding: 14px; background: var(--azul); color: #fff; border: none; border-radius: 12px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .btn-entregue { flex: 1; padding: 14px; background: var(--verde-claro); color: #fff; border: none; border-radius: 12px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; }
+
+  .vazio {
+    text-align: center; padding: 60px 20px;
+    background: var(--branco); border-radius: 20px;
+    box-shadow: 0 4px 16px var(--sombra);
+  }
+  .vazio-icon { font-size: 48px; margin-bottom: 16px; }
+  .vazio-texto { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--verde); margin-bottom: 8px; }
+  .vazio-sub { color: var(--cinza); font-size: 13px; margin-bottom: 20px; }
+
+  .btn-atualizar { background: var(--lima); color: var(--verde); border: none; padding: 10px 20px; border-radius: 10px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px; cursor: pointer; }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--verde); color: var(--lima); padding: 14px 20px;
+    border-radius: 12px; font-size: 13px; font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    transform: translateY(80px); opacity: 0;
+    transition: all 0.3s; z-index: 999;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  .loading { text-align: center; color: var(--cinza); font-size: 13px; padding: 40px; animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+  .form-hidden { display: none; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN / CADASTRO -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Hortas<span>.</span></div>
+    <div class="login-role">🚴 Portal do Entregador</div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="alternarAba('login')">Entrar</button>
+      <button class="tab" onclick="alternarAba('cadastro')">Cadastrar</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="form-login">
+      <div class="field"><label>E-mail</label><input type="email" id="l-email" placeholder="seu@email.com"></div>
+      <div class="field"><label>Senha</label><input type="password" id="l-senha" placeholder="••••••"></div>
+      <button class="btn-primary" onclick="fazerLogin()">Entrar</button>
+      <div class="msg-erro" id="login-erro">E-mail ou senha incorretos.</div>
+    </div>
+
+    <!-- CADASTRO -->
+    <div id="form-cadastro" class="form-hidden">
+      <div class="field"><label>Nome completo</label><input type="text" id="c-nome" placeholder="João Silva"></div>
+      <div class="field"><label>E-mail</label><input type="email" id="c-email" placeholder="seu@email.com"></div>
+      <div class="field"><label>Senha</label><input type="password" id="c-senha" placeholder="••••••"></div>
+      <div class="field"><label>Telefone</label><input type="text" id="c-tel" placeholder="47999999999"></div>
+      <button class="btn-primary" onclick="fazerCadastro()">Cadastrar</button>
+      <div class="msg-erro" id="cadastro-erro"></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <header>
+    <div class="logo">Hortas<span>.</span></div>
+    <div class="header-info">
+      <span class="badge-role">🚴 Entregador</span>
+      <span id="nome-entregador" style="color:#ccc;font-size:12px"></span>
+      <button class="btn-sair" onclick="sair()">Sair</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-title">Suas Entregas</div>
+    <div class="page-sub">Gerencie suas entregas em tempo real</div>
+
+    <div class="status-bar">
+      <div class="status-label">
+        <div class="status-dot" id="status-dot"></div>
+        Status: <strong id="status-texto">Verificando...</strong>
+      </div>
+      <button class="btn-atualizar" onclick="carregarTela()">↻ Atualizar</button>
+    </div>
+
+    <div id="conteudo"><div class="loading">Carregando...</div></div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = 'http://localhost:3000/api';
+  let token = localStorage.getItem('tokenEntregador');
+  let nomeEntregador = localStorage.getItem('nomeEntregador');
+
+  if (token) mostrarApp();
+
+  function alternarAba(aba) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('active', (i === 0 && aba === 'login') || (i === 1 && aba === 'cadastro'));
+    });
+    document.getElementById('form-login').style.display = aba === 'login' ? 'block' : 'none';
+    document.getElementById('form-cadastro').style.display = aba === 'cadastro' ? 'block' : 'none';
+  }
+
+  async function fazerLogin() {
+    const email = document.getElementById('l-email').value;
+    const senha = document.getElementById('l-senha').value;
+    const erro = document.getElementById('login-erro');
+    erro.style.display = 'none';
+    try {
+      const res = await fetch(`${API}/entregador/login`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha })
+      });
+      const data = await res.json();
+      if (data.status === 'sucesso') {
+        token = data.token;
+        nomeEntregador = data.nome;
+        localStorage.setItem('tokenEntregador', token);
+        localStorage.setItem('nomeEntregador', nomeEntregador);
+        mostrarApp();
+      } else {
+        erro.style.display = 'block';
+      }
+    } catch { erro.textContent = 'Erro ao conectar.'; erro.style.display = 'block'; }
+  }
+
+  async function fazerCadastro() {
+    const nome = document.getElementById('c-nome').value;
+    const email = document.getElementById('c-email').value;
+    const senha = document.getElementById('c-senha').value;
+    const telefone = document.getElementById('c-tel').value;
+    const erro = document.getElementById('cadastro-erro');
+    erro.style.display = 'none';
+    try {
+      const res = await fetch(`${API}/entregador/register`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, email, senha, telefone })
+      });
+      const data = await res.json();
+      if (data.status === 'sucesso') {
+        mostrarToast('Cadastro feito! Faça login.');
+        alternarAba('login');
+      } else {
+        erro.textContent = data.mensagem; erro.style.display = 'block';
+      }
+    } catch { erro.textContent = 'Erro ao conectar.'; erro.style.display = 'block'; }
+  }
+
+  function sair() {
+    localStorage.removeItem('tokenEntregador');
+    localStorage.removeItem('nomeEntregador');
+    token = null;
+    document.getElementById('app-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+  }
+
+  function mostrarApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display = 'block';
+    document.getElementById('nome-entregador').textContent = nomeEntregador || '';
+    carregarTela();
+  }
+
+  async function get(endpoint) {
+    const res = await fetch(`${API}${endpoint}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (res.status === 401) { sair(); return null; }
+    return res.json();
+  }
+
+  async function post(endpoint, body) {
+    const res = await fetch(`${API}${endpoint}`, {
+      method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    return res.json();
+  }
+
+  async function patch(endpoint, body) {
+    const res = await fetch(`${API}${endpoint}`, {
+      method: 'PATCH', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    return res.json();
+  }
+
+  async function carregarTela() {
+    document.getElementById('conteudo').innerHTML = '<div class="loading">Carregando...</div>';
+
+    // Primeiro verifica se tem entrega em andamento
+    const atual = await get('/entregador/minha-entrega-atual');
+    if (atual && atual.dados) {
+      atualizarStatus(true);
+      renderEntregaAtual(atual.dados);
+      return;
+    }
+
+    // Se não, busca próxima pendente
+    atualizarStatus(false);
+    const proxima = await get('/entregador/proxima-entrega');
+    if (!proxima || !proxima.dados) {
+      document.getElementById('conteudo').innerHTML = `
+        <div class="vazio">
+          <div class="vazio-icon">🌿</div>
+          <div class="vazio-texto">Nenhuma entrega disponível</div>
+          <div class="vazio-sub">Não há pedidos pendentes no momento. Aguarde novos pedidos.</div>
+          <button class="btn-atualizar" onclick="carregarTela()">↻ Verificar novamente</button>
+        </div>`;
+      return;
+    }
+
+    renderProximaEntrega(proxima.dados);
+  }
+
+  function atualizarStatus(ocupado) {
+    const dot = document.getElementById('status-dot');
+    const texto = document.getElementById('status-texto');
+    if (ocupado) { dot.classList.add('ocupado'); texto.textContent = 'Em entrega'; }
+    else { dot.classList.remove('ocupado'); texto.textContent = 'Disponível'; }
+  }
+
+  function renderProximaEntrega(p) {
+    document.getElementById('conteudo').innerHTML = `
+      <div class="card-entrega">
+        <div class="entrega-header">
+          <div class="entrega-id">Pedido #${p.id_pedido}</div>
+          <span class="entrega-status s-pendente">Pendente</span>
+        </div>
+        <div class="info-grid">
+          <div class="info-item"><label>Cliente</label><span>${p.nome_cliente}</span></div>
+          <div class="info-item"><label>Horta</label><span>${p.nome_horta}</span></div>
+          <div class="info-item"><label>Endereço de entrega</label><span>${p.endereco_entrega}</span></div>
+          <div class="info-item"><label>Valor total</label><span>R$ ${parseFloat(p.valor_total).toFixed(2)}</span></div>
+          ${p.observacao ? `<div class="info-item"><label>Observação</label><span>${p.observacao}</span></div>` : ''}
+          ${p.telefone_cliente ? `<div class="info-item"><label>Telefone</label><span>${p.telefone_cliente}</span></div>` : ''}
+        </div>
+        ${renderItens(p.itens)}
+        <div class="acoes">
+          <button class="btn-aceitar" onclick="aceitarPedido(${p.id_pedido})">✓ Aceitar entrega</button>
+        </div>
+      </div>`;
+  }
+
+  function renderEntregaAtual(p) {
+    const statusLabel = { aceito: 'Aceito', a_caminho: 'A caminho' };
+    document.getElementById('conteudo').innerHTML = `
+      <div class="card-entrega em-andamento">
+        <div class="entrega-header">
+          <div class="entrega-id">Pedido #${p.id_pedido}</div>
+          <span class="entrega-status s-${p.status}">${statusLabel[p.status] || p.status}</span>
+        </div>
+        <div class="info-grid">
+          <div class="info-item"><label>Cliente</label><span>${p.nome_cliente}</span></div>
+          <div class="info-item"><label>Horta</label><span>${p.nome_horta}</span></div>
+          <div class="info-item"><label>Endereço de entrega</label><span>${p.endereco_entrega}</span></div>
+          <div class="info-item"><label>Valor total</label><span>R$ ${parseFloat(p.valor_total).toFixed(2)}</span></div>
+          ${p.telefone_cliente ? `<div class="info-item"><label>Telefone</label><span>${p.telefone_cliente}</span></div>` : ''}
+        </div>
+        ${renderItens(p.itens)}
+        <div class="acoes">
+          ${p.status === 'aceito' ? `<button class="btn-caminho" onclick="atualizarStatus2(${p.id_pedido}, 'a_caminho')">🚴 Saí para entregar</button>` : ''}
+          ${p.status === 'a_caminho' ? `<button class="btn-entregue" onclick="atualizarStatus2(${p.id_pedido}, 'entregue')">✓ Confirmar entrega</button>` : ''}
+        </div>
+      </div>`;
+  }
+
+  function renderItens(itens) {
+    if (!itens || !itens.length) return '';
+    return `
+      <div class="itens-lista">
+        <div class="itens-titulo">Itens do pedido</div>
+        ${itens.map(i => `
+          <div class="item-linha">
+            <span>${i.nm_produto} — ${i.quantidade} ${i.unidade_medida_padrao || 'un'}</span>
+            <span>R$ ${(i.quantidade * i.preco_unitario).toFixed(2)}</span>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  async function aceitarPedido(id) {
+    const data = await post(`/entregador/aceitar/${id}`, {});
+    mostrarToast(data.mensagem);
+    setTimeout(carregarTela, 800);
+  }
+
+  async function atualizarStatus2(id, status) {
+    const data = await patch(`/entregador/status/${id}`, { status });
+    mostrarToast(data.mensagem);
+    setTimeout(carregarTela, 800);
+  }
+
+  function mostrarToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+</script>
+</body>
+</html>

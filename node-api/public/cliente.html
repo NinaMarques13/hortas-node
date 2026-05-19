@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hortas — Cliente</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --verde: #1a4a1a;
+    --verde-meio: #2d6e2d;
+    --verde-claro: #4caf50;
+    --lima: #a8d500;
+    --creme: #f5f0e8;
+    --branco: #fafaf7;
+    --cinza: #6b7280;
+    --vermelho: #dc2626;
+    --sombra: rgba(26,74,26,0.12);
+  }
+
+  body { font-family: 'DM Mono', monospace; background: var(--creme); color: var(--verde); min-height: 100vh; }
+
+  /* LOGIN */
+  #login-screen {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #1a3a1a 0%, #2d5a2d 100%);
+  }
+
+  .login-box {
+    background: var(--branco); border-radius: 24px; padding: 48px;
+    width: 100%; max-width: 420px; box-shadow: 0 32px 64px rgba(0,0,0,0.3);
+  }
+
+  .login-logo { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; color: var(--verde); margin-bottom: 4px; }
+  .login-logo span { color: var(--lima); }
+  .login-role { font-size: 12px; color: var(--cinza); margin-bottom: 32px; text-transform: uppercase; letter-spacing: 1px; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 28px; }
+  .tab { flex: 1; padding: 10px; border: 2px solid #e5e7eb; border-radius: 10px; background: transparent; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--cinza); cursor: pointer; transition: all 0.2s; }
+  .tab.active { border-color: var(--verde); background: var(--verde); color: var(--lima); }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--cinza); margin-bottom: 6px; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 12px 14px; border: 2px solid #e5e7eb; border-radius: 10px;
+    font-family: 'DM Mono', monospace; font-size: 14px; color: var(--verde);
+    background: var(--branco); transition: border-color 0.2s; outline: none;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--verde-claro); }
+  .field textarea { resize: vertical; min-height: 80px; }
+
+  .btn-primary {
+    width: 100%; padding: 14px; background: var(--verde); color: var(--lima);
+    border: none; border-radius: 10px; font-family: 'Syne', sans-serif;
+    font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 8px;
+  }
+  .btn-primary:hover { background: var(--verde-meio); }
+
+  .msg-erro { color: var(--vermelho); font-size: 12px; margin-top: 10px; display: none; }
+  .msg-ok { color: var(--verde-claro); font-size: 12px; margin-top: 10px; display: none; }
+
+  /* APP */
+  #app-screen { display: none; }
+
+  header {
+    background: var(--verde); padding: 0 32px; display: flex;
+    align-items: center; justify-content: space-between; height: 60px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; color: var(--branco); }
+  .logo span { color: var(--lima); }
+  .header-info { display: flex; align-items: center; gap: 12px; }
+  .badge-role { background: var(--lima); color: var(--verde); padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .btn-sair { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px 14px; border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 12px; cursor: pointer; }
+
+  main { padding: 32px; max-width: 800px; margin: 0 auto; }
+
+  /* NAVEGAÇÃO */
+  .nav-abas { display: flex; gap: 8px; margin-bottom: 28px; }
+  .nav-aba {
+    padding: 10px 20px; border: 2px solid #e5e7eb; border-radius: 10px;
+    background: var(--branco); font-family: 'Syne', sans-serif; font-size: 13px;
+    font-weight: 700; color: var(--cinza); cursor: pointer; transition: all 0.2s;
+  }
+  .nav-aba.active { border-color: var(--verde); background: var(--verde); color: var(--lima); }
+
+  /* TELAS */
+  .tela { display: none; animation: fadeUp 0.3s ease; }
+  .tela.ativa { display: block; }
+
+  .page-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+  .page-sub { color: var(--cinza); font-size: 13px; margin-bottom: 24px; }
+
+  /* PRODUTOS */
+  .produtos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+
+  .produto-card {
+    background: var(--branco); border-radius: 16px; padding: 20px;
+    box-shadow: 0 4px 12px var(--sombra); cursor: pointer;
+    border: 2px solid transparent; transition: all 0.2s;
+  }
+  .produto-card:hover { border-color: var(--lima); transform: translateY(-2px); }
+  .produto-card.selecionado { border-color: var(--verde); background: #f0f7f0; }
+
+  .produto-nome { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .produto-estoque { font-size: 11px; color: var(--cinza); margin-bottom: 8px; }
+  .produto-preco { font-size: 16px; font-weight: 700; color: var(--verde-claro); }
+
+  .produto-qty {
+    display: flex; align-items: center; gap: 8px; margin-top: 12px;
+  }
+  .qty-btn {
+    width: 28px; height: 28px; border-radius: 8px; border: 1px solid #e5e7eb;
+    background: var(--creme); font-size: 16px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; font-weight: 700; color: var(--verde);
+  }
+  .qty-num { font-size: 14px; font-weight: 700; min-width: 20px; text-align: center; }
+
+  /* CARRINHO */
+  .carrinho-resumo {
+    background: var(--branco); border-radius: 16px; padding: 20px;
+    box-shadow: 0 4px 12px var(--sombra); margin-bottom: 20px;
+    border-left: 4px solid var(--lima);
+  }
+  .carrinho-titulo { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+  .carrinho-item { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid #ebe8e0; }
+  .carrinho-item:last-child { border-bottom: none; }
+  .carrinho-total { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 800; margin-top: 12px; text-align: right; color: var(--verde); }
+
+  .btn-finalizar {
+    width: 100%; padding: 16px; background: var(--lima); color: var(--verde);
+    border: none; border-radius: 12px; font-family: 'Syne', sans-serif;
+    font-size: 16px; font-weight: 800; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-finalizar:hover { opacity: 0.9; }
+  .btn-finalizar:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* PEDIDOS */
+  .pedido-card {
+    background: var(--branco); border-radius: 16px; padding: 20px;
+    box-shadow: 0 4px 12px var(--sombra); margin-bottom: 16px;
+    animation: fadeUp 0.3s ease;
+  }
+  .pedido-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .pedido-id { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 800; }
+  .pedido-status { font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 600; }
+  .s-pendente { background: #fef3c7; color: #92400e; }
+  .s-aceito { background: #dbeafe; color: #1e40af; }
+  .s-a_caminho { background: #ede9fe; color: #5b21b6; }
+  .s-entregue { background: #dcfce7; color: #166534; }
+  .s-cancelado { background: #fee2e2; color: #991b1b; }
+
+  .pedido-info { font-size: 12px; color: var(--cinza); margin-bottom: 8px; }
+  .pedido-valor { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; color: var(--verde); }
+
+  .entregador-info {
+    background: #f0f7f0; border-radius: 10px; padding: 12px; margin-top: 10px; font-size: 12px;
+  }
+
+  .vazio { text-align: center; padding: 48px; color: var(--cinza); }
+  .vazio-icon { font-size: 40px; margin-bottom: 12px; }
+  .vazio-texto { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: var(--verde); }
+
+  .loading { text-align: center; color: var(--cinza); font-size: 13px; padding: 40px; animation: pulse 1.5s infinite; }
+
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--verde); color: var(--lima); padding: 14px 20px;
+    border-radius: 12px; font-size: 13px; font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    transform: translateY(80px); opacity: 0; transition: all 0.3s; z-index: 999;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  .btn-atualizar { background: var(--lima); color: var(--verde); border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 12px; cursor: pointer; }
+
+  .horta-sel {
+    background: var(--branco); border-radius: 12px; padding: 16px;
+    box-shadow: 0 2px 8px var(--sombra); margin-bottom: 20px;
+  }
+  .horta-sel label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--cinza); display: block; margin-bottom: 8px; }
+  .horta-sel select { width: 100%; padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 14px; color: var(--verde); background: var(--branco); outline: none; }
+  .horta-sel select:focus { border-color: var(--verde-claro); }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .form-hidden { display: none; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Hortas<span>.</span></div>
+    <div class="login-role">🛒 Portal do Cliente</div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="alternarAba('login')">Entrar</button>
+      <button class="tab" onclick="alternarAba('cadastro')">Cadastrar</button>
+    </div>
+
+    <div id="form-login">
+      <div class="field"><label>E-mail</label><input type="email" id="l-email" placeholder="seu@email.com"></div>
+      <div class="field"><label>Senha</label><input type="password" id="l-senha" placeholder="••••••"></div>
+      <button class="btn-primary" onclick="fazerLogin()">Entrar</button>
+      <div class="msg-erro" id="login-erro">E-mail ou senha incorretos.</div>
+    </div>
+
+    <div id="form-cadastro" class="form-hidden">
+      <div class="field"><label>Nome completo</label><input type="text" id="c-nome" placeholder="Maria Silva"></div>
+      <div class="field"><label>E-mail</label><input type="email" id="c-email" placeholder="seu@email.com"></div>
+      <div class="field"><label>Senha</label><input type="password" id="c-senha" placeholder="••••••"></div>
+      <div class="field"><label>Telefone</label><input type="text" id="c-tel" placeholder="47999999999"></div>
+      <div class="field"><label>Endereço padrão</label><input type="text" id="c-end" placeholder="Rua das Flores, 123 - Joinville/SC"></div>
+      <button class="btn-primary" onclick="fazerCadastro()">Cadastrar</button>
+      <div class="msg-erro" id="cadastro-erro"></div>
+      <div class="msg-ok" id="cadastro-ok">Cadastro feito! Faça login.</div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <header>
+    <div class="logo">Hortas<span>.</span></div>
+    <div class="header-info">
+      <span class="badge-role">🛒 Cliente</span>
+      <span id="nome-cliente" style="color:#ccc;font-size:12px"></span>
+      <button class="btn-sair" onclick="sair()">Sair</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="nav-abas">
+      <button class="nav-aba active" onclick="irPara('fazer-pedido')">🥬 Fazer Pedido</button>
+      <button class="nav-aba" onclick="irPara('meus-pedidos')">📦 Meus Pedidos</button>
+    </div>
+
+    <!-- FAZER PEDIDO -->
+    <div class="tela ativa" id="tela-fazer-pedido">
+      <div class="page-title">Fazer Pedido</div>
+      <div class="page-sub">Escolha os produtos e finalize seu pedido</div>
+
+      <div class="horta-sel">
+        <label>Horta</label>
+        <select id="horta-select" onchange="carregarProdutos()">
+          <option value="">Carregando hortas...</option>
+        </select>
+      </div>
+
+      <div id="produtos-lista"><div class="loading">Selecione uma horta acima</div></div>
+
+      <div id="carrinho-area" style="display:none">
+        <div class="carrinho-resumo">
+          <div class="carrinho-titulo">🛒 Carrinho</div>
+          <div id="carrinho-itens"></div>
+          <div class="carrinho-total" id="carrinho-total">Total: R$ 0,00</div>
+        </div>
+
+        <div class="field">
+          <label>Endereço de entrega</label>
+          <input type="text" id="endereco-entrega" placeholder="Rua das Flores, 123 - Joinville/SC">
+        </div>
+
+        <div class="field">
+          <label>Observação (opcional)</label>
+          <textarea id="observacao" placeholder="Ex: Deixar na portaria..."></textarea>
+        </div>
+
+        <button class="btn-finalizar" id="btn-finalizar" onclick="finalizarPedido()">Finalizar Pedido</button>
+      </div>
+    </div>
+
+    <!-- MEUS PEDIDOS -->
+    <div class="tela" id="tela-meus-pedidos">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div class="page-title">Meus Pedidos</div>
+        <button class="btn-atualizar" onclick="carregarMeusPedidos()">↻ Atualizar</button>
+      </div>
+      <div class="page-sub">Acompanhe o status das suas entregas</div>
+      <div id="pedidos-lista"><div class="loading">Carregando...</div></div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = 'http://localhost:3000/api';
+  let token = localStorage.getItem('tokenCliente');
+  let nomeCliente = localStorage.getItem('nomeCliente');
+  // usa token do produtor como fallback para acessar rotas protegidas
+  if (!token) token = localStorage.getItem('token');
+  let carrinho = []; // [{ estoque_id, nm_produto, quantidade, preco_unitario, max }]
+
+  if (token) mostrarApp();
+
+  function alternarAba(aba) {
+    document.querySelectorAll('.tab').forEach((t, i) => {
+      t.classList.toggle('active', (i === 0 && aba === 'login') || (i === 1 && aba === 'cadastro'));
+    });
+    document.getElementById('form-login').style.display = aba === 'login' ? 'block' : 'none';
+    document.getElementById('form-cadastro').style.display = aba === 'cadastro' ? 'block' : 'none';
+  }
+
+  async function fazerLogin() {
+    const email = document.getElementById('l-email').value;
+    const senha = document.getElementById('l-senha').value;
+    const erro = document.getElementById('login-erro');
+    erro.style.display = 'none';
+    try {
+      const res = await fetch(`${API}/pedidos/cliente/login`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, senha })
+      });
+      const data = await res.json();
+      if (data.status === 'sucesso') {
+        token = data.token; nomeCliente = data.nome;
+        localStorage.setItem('tokenCliente', token);
+        localStorage.setItem('nomeCliente', nomeCliente);
+        mostrarApp();
+      } else { erro.style.display = 'block'; }
+    } catch { erro.textContent = 'Erro ao conectar.'; erro.style.display = 'block'; }
+  }
+
+  async function fazerCadastro() {
+    const nome = document.getElementById('c-nome').value;
+    const email = document.getElementById('c-email').value;
+    const senha = document.getElementById('c-senha').value;
+    const telefone = document.getElementById('c-tel').value;
+    const endereco_entrega = document.getElementById('c-end').value;
+    const erro = document.getElementById('cadastro-erro');
+    const ok = document.getElementById('cadastro-ok');
+    erro.style.display = 'none'; ok.style.display = 'none';
+    try {
+      const res = await fetch(`${API}/pedidos/cliente/register`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome, email, senha, telefone, endereco_entrega })
+      });
+      const data = await res.json();
+      if (data.status === 'sucesso') {
+        ok.style.display = 'block';
+        setTimeout(() => alternarAba('login'), 1500);
+      } else { erro.textContent = data.mensagem; erro.style.display = 'block'; }
+    } catch { erro.textContent = 'Erro ao conectar.'; erro.style.display = 'block'; }
+  }
+
+  function sair() {
+    localStorage.removeItem('tokenCliente');
+    localStorage.removeItem('nomeCliente');
+    token = null; carrinho = [];
+    document.getElementById('app-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+  }
+
+  async function mostrarApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app-screen').style.display = 'block';
+    document.getElementById('nome-cliente').textContent = nomeCliente || '';
+    await carregarHortas();
+  }
+
+  async function get(endpoint) {
+    const res = await fetch(`${API}${endpoint}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (res.status === 401) { sair(); return null; }
+    return res.json();
+  }
+
+  function irPara(tela) {
+    document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+    document.querySelectorAll('.nav-aba').forEach(a => a.classList.remove('active'));
+    document.getElementById(`tela-${tela}`).classList.add('ativa');
+    event.target.classList.add('active');
+    if (tela === 'meus-pedidos') carregarMeusPedidos();
+  }
+
+  async function carregarHortas() {
+    const data = await get('/dashboard/hortas-ativas');
+    const sel = document.getElementById('horta-select');
+    if (!data || !data.dados.length) {
+      sel.innerHTML = '<option value="">Nenhuma horta disponível</option>';
+      return;
+    }
+    sel.innerHTML = '<option value="">Selecione uma horta...</option>' +
+      data.dados.map(h => `<option value="${h.id_hortas}">${h.nome}</option>`).join('');
+  }
+
+  async function carregarProdutos() {
+    const hortaId = document.getElementById('horta-select').value;
+    const lista = document.getElementById('produtos-lista');
+    if (!hortaId) { lista.innerHTML = '<div class="loading">Selecione uma horta acima</div>'; return; }
+
+    lista.innerHTML = '<div class="loading">Carregando produtos...</div>';
+    carrinho = [];
+    atualizarCarrinho();
+
+    // Busca estoques da horta
+    const data = await get(`/hortas/${hortaId}`);
+    const estoques = data?.estoques || [];
+
+    if (!estoques.length) {
+      lista.innerHTML = '<div class="vazio"><div class="vazio-icon">🥬</div><div class="vazio-texto">Sem produtos em estoque nesta horta</div></div>';
+      return;
+    }
+
+    lista.innerHTML = '<div class="produtos-grid">' +
+      estoques.map(e => {
+        const preco = parseFloat(e.preco || e.preco_unitario || 5).toFixed(2);
+        const nome = (e.nm_produto || e.produto || 'Produto').replace(/'/g, "\\'");
+        const unidade = (e.unidade_medida_padrao || 'un').replace(/'/g, "\\'");
+        const qtd = parseFloat(e.ds_quantidade);
+        return `
+        <div class="produto-card" id="card-${e.id_estoques}">
+          <div class="produto-nome">${e.nm_produto || e.produto || 'Produto'}</div>
+          <div class="produto-estoque">Disponível: ${qtd} ${e.unidade_medida_padrao || 'un'}</div>
+          <div class="produto-preco">R$ ${preco}</div>
+          <div class="produto-qty">
+            <button class="qty-btn" onclick="alterarQty(${e.id_estoques}, -1)">−</button>
+            <span class="qty-num" id="qty-${e.id_estoques}">0</span>
+            <button class="qty-btn" onclick="alterarQty(${e.id_estoques}, 1, ${qtd}, '${nome}', ${preco}, '${unidade}')">+</button>
+          </div>
+        </div>`;
+      }).join('') + '</div>';
+  }
+
+  function alterarQty(estoqueId, delta, max, nome, preco, unidade) {
+    const el = document.getElementById(`qty-${estoqueId}`);
+    let qty = parseInt(el.textContent) + delta;
+    qty = Math.max(0, Math.min(qty, max || 999));
+    el.textContent = qty;
+
+    document.getElementById(`card-${estoqueId}`).classList.toggle('selecionado', qty > 0);
+
+    // Atualiza carrinho
+    const idx = carrinho.findIndex(i => i.estoque_id === estoqueId);
+    if (qty === 0 && idx !== -1) { carrinho.splice(idx, 1); }
+    else if (qty > 0 && idx === -1) { carrinho.push({ estoque_id: estoqueId, nm_produto: nome, quantidade: qty, preco_unitario: preco, unidade }); }
+    else if (qty > 0 && idx !== -1) { carrinho[idx].quantidade = qty; }
+
+    atualizarCarrinho();
+  }
+
+  function atualizarCarrinho() {
+    const area = document.getElementById('carrinho-area');
+    if (!carrinho.length) { area.style.display = 'none'; return; }
+    area.style.display = 'block';
+
+    const total = carrinho.reduce((acc, i) => acc + i.quantidade * i.preco_unitario, 0);
+    document.getElementById('carrinho-itens').innerHTML =
+      carrinho.map(i => `
+        <div class="carrinho-item">
+          <span>${i.nm_produto} × ${i.quantidade} ${i.unidade}</span>
+          <span>R$ ${(i.quantidade * i.preco_unitario).toFixed(2)}</span>
+        </div>`).join('');
+    document.getElementById('carrinho-total').textContent = `Total: R$ ${total.toFixed(2)}`;
+  }
+
+  async function finalizarPedido() {
+    const hortaId = document.getElementById('horta-select').value;
+    const endereco = document.getElementById('endereco-entrega').value.trim();
+    const obs = document.getElementById('observacao').value.trim();
+
+    if (!endereco) { mostrarToast('Informe o endereço de entrega!'); return; }
+    if (!carrinho.length) { mostrarToast('Adicione produtos ao carrinho!'); return; }
+
+    const btn = document.getElementById('btn-finalizar');
+    btn.disabled = true; btn.textContent = 'Enviando...';
+
+    try {
+      const res = await fetch(`${API}/pedidos`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          horta_id: parseInt(hortaId),
+          endereco_entrega: endereco,
+          observacao: obs || null,
+          itens: carrinho.map(i => ({ estoque_id: i.estoque_id, quantidade: i.quantidade, preco_unitario: i.preco_unitario }))
+        })
+      });
+      const data = await res.json();
+      if (data.status === 'sucesso') {
+        mostrarToast(`Pedido #${data.id_pedido} criado! 🎉`);
+        carrinho = [];
+        atualizarCarrinho();
+        document.getElementById('endereco-entrega').value = '';
+        document.getElementById('observacao').value = '';
+        document.querySelectorAll('.qty-num').forEach(el => el.textContent = '0');
+        document.querySelectorAll('.produto-card').forEach(el => el.classList.remove('selecionado'));
+        setTimeout(() => irParaPedidos(), 1500);
+      } else { mostrarToast(data.mensagem || 'Erro ao criar pedido.'); }
+    } catch { mostrarToast('Erro ao conectar.'); }
+    finally { btn.disabled = false; btn.textContent = 'Finalizar Pedido'; }
+  }
+
+  function irParaPedidos() {
+    document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+    document.querySelectorAll('.nav-aba').forEach(a => a.classList.remove('active'));
+    document.getElementById('tela-meus-pedidos').classList.add('ativa');
+    document.querySelectorAll('.nav-aba')[1].classList.add('active');
+    carregarMeusPedidos();
+  }
+
+  async function carregarMeusPedidos() {
+    document.getElementById('pedidos-lista').innerHTML = '<div class="loading">Carregando...</div>';
+    const data = await get('/pedidos/meus');
+    const lista = document.getElementById('pedidos-lista');
+    if (!data || !data.dados.length) {
+      lista.innerHTML = '<div class="vazio"><div class="vazio-icon">📦</div><div class="vazio-texto">Nenhum pedido ainda</div></div>';
+      return;
+    }
+
+    const statusLabel = { pendente: 'Pendente', aceito: 'Aceito', a_caminho: 'A caminho', entregue: 'Entregue', cancelado: 'Cancelado' };
+
+    lista.innerHTML = data.dados.map(p => `
+      <div class="pedido-card">
+        <div class="pedido-header">
+          <div class="pedido-id">Pedido #${p.id_pedido}</div>
+          <span class="pedido-status s-${p.status}">${statusLabel[p.status] || p.status}</span>
+        </div>
+        <div class="pedido-info">${p.nome_horta} · ${formatarData(p.dt_pedido)}</div>
+        <div class="pedido-info">📍 ${p.endereco_entrega}</div>
+        <div class="pedido-valor">R$ ${parseFloat(p.valor_total).toFixed(2)}</div>
+        ${p.nome_entregador ? `
+          <div class="entregador-info">
+            🚴 <strong>${p.nome_entregador}</strong>
+            ${p.telefone_entregador ? ` · ${p.telefone_entregador}` : ''}
+          </div>` : ''}
+      </div>`).join('');
+  }
+
+  function formatarData(str) {
+    if (!str) return '—';
+    return new Date(str).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function mostrarToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+</script>
+</body>
+</html>
