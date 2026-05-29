@@ -45,6 +45,13 @@ app.use('/api/entregador', entregadorRoutes);
 app.use('/api/pedidos', pedidosRoutes);
 
 // =====================================================
+// Rota raiz — redireciona para o dashboard (login do produtor)
+// =====================================================
+app.get('/', (_req, res) => {
+  res.redirect('/dashboard.html');
+});
+
+// =====================================================
 // Health check
 // =====================================================
 app.get('/api/health', (_req, res) => {
