@@ -320,4 +320,136 @@ router.get('/minha-entrega-atual', validarTokenJwt, async (req, res) => {
     }
 });
 
+// =====================================================
+// GET /api/entregador/pendentes
+// Retorna todos os pedidos pendentes disponíveis
+// =====================================================
+router.get('/pendentes', validarTokenJwt, async (req, res) => {
+    try {
+        const [pedidos] = await pool.execute(
+            `SELECT
+                p.id_pedido,
+                p.status,
+                p.endereco_entrega,
+                p.observacao,
+                p.valor_total,
+                p.dt_pedido,
+                c.nome AS nome_cliente,
+                c.telefone AS telefone_cliente,
+                h.nome AS nome_horta,
+                eh.nm_rua,
+                eh.nm_bairro,
+                eh.nm_cidade
+             FROM pedidos p
+             JOIN clientes c ON c.id_cliente = p.cliente_id
+             JOIN hortas h ON h.id_hortas = p.horta_id
+             LEFT JOIN endereco_hortas eh ON eh.id_endereco_hortas = h.endereco_hortas_id_endereco_hortas
+             WHERE p.status = 'pendente' AND p.entregador_id IS NULL
+             ORDER BY p.dt_pedido ASC`
+        );
+
+        if (pedidos.length === 0) {
+            return res.json({ status: 'sucesso', dados: [] });
+        }
+
+        const idsPedidos = pedidos.map(p => p.id_pedido);
+        const [itens] = await pool.execute(
+            `SELECT
+                ip.pedido_id,
+                ip.quantidade,
+                ip.preco_unitario,
+                p.nm_produto,
+                p.unidade_medida_padrao
+             FROM itens_pedido ip
+             JOIN estoques e ON e.id_estoques = ip.estoque_id
+             JOIN produtos p ON p.id_produto = e.produto_id_produto
+             WHERE ip.pedido_id IN (${idsPedidos.join(',')})`
+        );
+
+        const itensPorPedido = {};
+        itens.forEach(i => {
+            if (!itensPorPedido[i.pedido_id]) itensPorPedido[i.pedido_id] = [];
+            itensPorPedido[i.pedido_id].push(i);
+        });
+
+        const dados = pedidos.map(p => ({
+            ...p,
+            itens: itensPorPedido[p.id_pedido] || []
+        }));
+
+        res.json({ status: 'sucesso', dados });
+    } catch (err) {
+        console.error('Erro ao buscar entregas pendentes:', err.message);
+        res.status(500).json({ status: 'erro', mensagem: 'Erro no servidor.' });
+    }
+});
+
+// =====================================================
+// GET /api/entregador/historico
+// Retorna histórico de entregas finalizadas do entregador
+// =====================================================
+router.get('/historico', validarTokenJwt, async (req, res) => {
+    const idEntregador = req.usuario?.id;
+
+    try {
+        const [pedidos] = await pool.execute(
+            `SELECT
+                p.id_pedido,
+                p.status,
+                p.endereco_entrega,
+                p.observacao,
+                p.valor_total,
+                p.dt_pedido,
+                c.nome AS nome_cliente,
+                c.telefone AS telefone_cliente,
+                h.nome AS nome_horta,
+                eh.nm_rua,
+                eh.nm_bairro,
+                eh.nm_cidade
+             FROM pedidos p
+             JOIN clientes c ON c.id_cliente = p.cliente_id
+             JOIN hortas h ON h.id_hortas = p.horta_id
+             LEFT JOIN endereco_hortas eh ON eh.id_endereco_hortas = h.endereco_hortas_id_endereco_hortas
+             WHERE p.entregador_id = ? AND p.status IN ('entregue', 'cancelado')
+             ORDER BY p.dt_pedido DESC
+             LIMIT 50`,
+            [idEntregador]
+        );
+
+        if (pedidos.length === 0) {
+            return res.json({ status: 'sucesso', dados: [] });
+        }
+
+        const idsPedidos = pedidos.map(p => p.id_pedido);
+        const [itens] = await pool.execute(
+            `SELECT
+                ip.pedido_id,
+                ip.quantidade,
+                ip.preco_unitario,
+                p.nm_produto,
+                p.unidade_medida_padrao
+             FROM itens_pedido ip
+             JOIN estoques e ON e.id_estoques = ip.estoque_id
+             JOIN produtos p ON p.id_produto = e.produto_id_produto
+             WHERE ip.pedido_id IN (${idsPedidos.join(',')})`
+        );
+
+        const itensPorPedido = {};
+        itens.forEach(i => {
+            if (!itensPorPedido[i.pedido_id]) itensPorPedido[i.pedido_id] = [];
+            itensPorPedido[i.pedido_id].push(i);
+        });
+
+        const dados = pedidos.map(p => ({
+            ...p,
+            itens: itensPorPedido[p.id_pedido] || []
+        }));
+
+        res.json({ status: 'sucesso', dados });
+    } catch (err) {
+        console.error('Erro ao buscar historico:', err.message);
+        res.status(500).json({ status: 'erro', mensagem: 'Erro no servidor.' });
+    }
+});
+
 module.exports = router;

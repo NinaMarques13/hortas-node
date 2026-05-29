@@ -88,6 +88,19 @@
 
   main { padding: 32px; max-width: 700px; margin: 0 auto; }
 
+  /* NAVEGAÇÃO */
+  .nav-abas { display: flex; gap: 8px; margin-bottom: 28px; }
+  .nav-aba {
+    padding: 10px 20px; border: 2px solid #e5e7eb; border-radius: 10px;
+    background: var(--branco); font-family: 'Syne', sans-serif; font-size: 13px;
+    font-weight: 700; color: var(--cinza); cursor: pointer; transition: all 0.2s;
+  }
+  .nav-aba.active { border-color: var(--verde); background: var(--verde); color: var(--lima); }
+
+  /* TELAS */
+  .tela { display: none; animation: fadeUp 0.3s ease; }
+  .tela.ativa { display: block; }
+
   .page-title { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; margin-bottom: 4px; }
   .page-sub { color: var(--cinza); font-size: 13px; margin-bottom: 28px; }
 
@@ -107,37 +120,38 @@
   /* CARD ENTREGA */
   .card-entrega {
     background: var(--branco); border-radius: 20px; padding: 28px;
-    box-shadow: 0 4px 16px var(--sombra); margin-bottom: 24px;
-    border-left: 5px solid var(--lima);
-    animation: fadeUp 0.4s ease;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08); margin-bottom: 24px;
+    border-left: 8px solid var(--lima);
+    animation: fadeUp 0.4s ease; position: relative;
   }
-
   .card-entrega.em-andamento { border-left-color: var(--laranja); }
+  .card-entrega.s-entregue { border-left-color: var(--verde-claro); }
 
-  .entrega-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
-  .entrega-id { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; }
-  .entrega-status { font-size: 11px; padding: 5px 12px; border-radius: 20px; font-weight: 600; }
+  .entrega-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 24px; }
+  .entrega-id { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 800; color: var(--verde); }
+  .entrega-status { font-size: 12px; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-family: 'DM Mono', monospace; }
   .s-pendente { background: #fef3c7; color: #92400e; }
   .s-aceito { background: #dbeafe; color: #1e40af; }
   .s-a_caminho { background: #ede9fe; color: #5b21b6; }
   .s-entregue { background: #dcfce7; color: #166534; }
+  .s-cancelado { background: #fee2e2; color: #991b1b; }
 
-  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
-  .info-item label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--cinza); display: block; margin-bottom: 4px; }
-  .info-item span { font-size: 14px; color: var(--verde); font-weight: 500; }
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .info-item label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--cinza); display: block; margin-bottom: 6px; }
+  .info-item span { font-size: 15px; color: var(--verde); font-weight: 500; font-family: 'DM Mono', monospace; }
 
-  .itens-lista { background: var(--creme); border-radius: 12px; padding: 16px; margin-bottom: 20px; }
-  .itens-titulo { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--cinza); margin-bottom: 12px; }
-  .item-linha { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid #ebe8e0; }
+  .itens-lista { background: #f6f0e4; border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+  .itens-titulo { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--cinza); margin-bottom: 16px; font-weight: 700; }
+  .item-linha { display: flex; justify-content: space-between; font-size: 14px; padding: 8px 0; color: var(--verde); }
   .item-linha:last-child { border-bottom: none; }
 
   .acoes { display: flex; gap: 12px; flex-wrap: wrap; }
-
-  .btn-aceitar { flex: 1; padding: 14px; background: var(--verde); color: var(--lima); border: none; border-radius: 12px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
-  .btn-aceitar:hover { background: var(--verde-meio); }
-
-  .btn-caminho { flex: 1; padding: 14px; background: var(--azul); color: #fff; border: none; border-radius: 12px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
-  .btn-entregue { flex: 1; padding: 14px; background: var(--verde-claro); color: #fff; border: none; border-radius: 12px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; }
+  .btn-aceitar { flex: 1; padding: 16px; background: #2d6e2d; color: var(--lima); border: none; border-radius: 12px; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .btn-aceitar:hover { background: var(--verde); }
+  .btn-caminho { flex: 1; padding: 16px; background: var(--azul); color: #fff; border: none; border-radius: 12px; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .btn-entregue { flex: 1; padding: 16px; background: var(--verde-claro); color: #fff; border: none; border-radius: 12px; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .btn-maps { flex: 1; padding: 14px; background: var(--creme); color: var(--verde); border: 2px solid #e5e7eb; border-radius: 12px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; }
+  .btn-maps:hover { border-color: var(--verde); }
 
   .vazio {
     text-align: center; padding: 60px 20px;
@@ -212,18 +226,38 @@
   </header>
 
   <main>
-    <div class="page-title">Suas Entregas</div>
-    <div class="page-sub">Gerencie suas entregas em tempo real</div>
-
-    <div class="status-bar">
-      <div class="status-label">
-        <div class="status-dot" id="status-dot"></div>
-        Status: <strong id="status-texto">Verificando...</strong>
-      </div>
-      <button class="btn-atualizar" onclick="carregarTela()">↻ Atualizar</button>
+    <div class="nav-abas">
+      <button class="nav-aba active" onclick="irPara('disponiveis', this)">🚴 Entregas Disponíveis</button>
+      <button class="nav-aba" onclick="irPara('historico', this)">📦 Entregas Realizadas</button>
     </div>
 
-    <div id="conteudo"><div class="loading">Carregando...</div></div>
+    <!-- ENTREGAS DISPONIVEIS -->
+    <div class="tela ativa" id="tela-disponiveis">
+      <div class="page-title">Suas Entregas</div>
+      <div class="page-sub">Gerencie suas entregas em tempo real</div>
+
+      <div class="status-bar">
+        <div class="status-label">
+          <div class="status-dot" id="status-dot"></div>
+          Status: <strong id="status-texto">Verificando...</strong>
+        </div>
+        <button class="btn-atualizar" onclick="carregarTela()">↻ Atualizar</button>
+      </div>
+
+      <div id="conteudo-disponiveis"><div class="loading">Carregando...</div></div>
+    </div>
+
+    <!-- HISTORICO -->
+    <div class="tela" id="tela-historico">
+      <div class="page-title">Histórico de Entregas</div>
+      <div class="page-sub">Confira todas as entregas que você já realizou</div>
+      
+      <div style="display:flex; justify-content: flex-end; margin-bottom: 20px;">
+        <button class="btn-atualizar" onclick="carregarHistorico()">↻ Atualizar Histórico</button>
+      </div>
+
+      <div id="conteudo-historico"><div class="loading">Carregando...</div></div>
+    </div>
   </main>
 </div>
 
@@ -326,32 +360,65 @@
     return res.json();
   }
 
-  async function carregarTela() {
-    document.getElementById('conteudo').innerHTML = '<div class="loading">Carregando...</div>';
+  function irPara(tela, btn = null) {
+    document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+    document.querySelectorAll('.nav-aba').forEach(a => a.classList.remove('active'));
+    document.getElementById(`tela-${tela}`).classList.add('ativa');
+    if (btn) btn.classList.add('active');
+    
+    if (tela === 'disponiveis') carregarTela();
+    else if (tela === 'historico') carregarHistorico();
+  }
 
+  async function carregarTela() {
+    document.getElementById('conteudo-disponiveis').innerHTML = '<div class="loading">Carregando...</div>';
+
+    let html = '';
+    
     // Primeiro verifica se tem entrega em andamento
     const atual = await get('/entregador/minha-entrega-atual');
     if (atual && atual.dados) {
       atualizarStatus(true);
-      renderEntregaAtual(atual.dados);
-      return;
+      html += renderCardEntrega(atual.dados, true);
+    } else {
+      atualizarStatus(false);
     }
 
-    // Se não, busca próxima pendente
-    atualizarStatus(false);
-    const proxima = await get('/entregador/proxima-entrega');
-    if (!proxima || !proxima.dados) {
-      document.getElementById('conteudo').innerHTML = `
+    // Busca todas pendentes
+    const pendentes = await get('/entregador/pendentes');
+    if (pendentes && pendentes.dados && pendentes.dados.length > 0) {
+      html += pendentes.dados.map(p => renderCardEntrega(p, false)).join('');
+    }
+
+    if (!html) {
+      html = `
         <div class="vazio">
           <div class="vazio-icon">🌿</div>
           <div class="vazio-texto">Nenhuma entrega disponível</div>
           <div class="vazio-sub">Não há pedidos pendentes no momento. Aguarde novos pedidos.</div>
           <button class="btn-atualizar" onclick="carregarTela()">↻ Verificar novamente</button>
         </div>`;
+    }
+
+    document.getElementById('conteudo-disponiveis').innerHTML = html;
+  }
+
+  async function carregarHistorico() {
+    document.getElementById('conteudo-historico').innerHTML = '<div class="loading">Carregando...</div>';
+    const historico = await get('/entregador/historico');
+    
+    if (!historico || !historico.dados || historico.dados.length === 0) {
+      document.getElementById('conteudo-historico').innerHTML = `
+        <div class="vazio">
+          <div class="vazio-icon">📦</div>
+          <div class="vazio-texto">Nenhuma entrega realizada</div>
+          <div class="vazio-sub">Você ainda não completou nenhuma entrega.</div>
+        </div>`;
       return;
     }
 
-    renderProximaEntrega(proxima.dados);
+    document.getElementById('conteudo-historico').innerHTML = 
+      historico.dados.map(p => renderCardEntrega(p, false, true)).join('');
   }
 
   function atualizarStatus(ocupado) {
@@ -361,32 +428,30 @@
     else { dot.classList.remove('ocupado'); texto.textContent = 'Disponível'; }
   }
 
-  function renderProximaEntrega(p) {
-    document.getElementById('conteudo').innerHTML = `
-      <div class="card-entrega">
-        <div class="entrega-header">
-          <div class="entrega-id">Pedido #${p.id_pedido}</div>
-          <span class="entrega-status s-pendente">Pendente</span>
-        </div>
-        <div class="info-grid">
-          <div class="info-item"><label>Cliente</label><span>${p.nome_cliente}</span></div>
-          <div class="info-item"><label>Horta</label><span>${p.nome_horta}</span></div>
-          <div class="info-item"><label>Endereço de entrega</label><span>${p.endereco_entrega}</span></div>
-          <div class="info-item"><label>Valor total</label><span>R$ ${parseFloat(p.valor_total).toFixed(2)}</span></div>
-          ${p.observacao ? `<div class="info-item"><label>Observação</label><span>${p.observacao}</span></div>` : ''}
-          ${p.telefone_cliente ? `<div class="info-item"><label>Telefone</label><span>${p.telefone_cliente}</span></div>` : ''}
-        </div>
-        ${renderItens(p.itens)}
-        <div class="acoes">
-          <button class="btn-aceitar" onclick="aceitarPedido(${p.id_pedido})">✓ Aceitar entrega</button>
-        </div>
-      </div>`;
-  }
+  function renderCardEntrega(p, isAndamento = false, isHistorico = false) {
+    const statusLabel = { pendente: 'Pendente', aceito: 'Aceito', a_caminho: 'A caminho', entregue: 'Entregue', cancelado: 'Cancelado' };
+    const classesExtras = isAndamento ? 'em-andamento' : `s-${p.status}`;
+    
+    let acoesHtml = '';
+    const enderecoFormatado = p.endereco_entrega ? encodeURIComponent(p.endereco_entrega + (p.nm_cidade ? `, ${p.nm_cidade}` : '')) : '';
+    const mapsBtn = `<a href="https://www.google.com/maps/search/?api=1&query=${enderecoFormatado}" target="_blank" class="btn-maps">🗺️ Ver Rota</a>`;
 
-  function renderEntregaAtual(p) {
-    const statusLabel = { aceito: 'Aceito', a_caminho: 'A caminho' };
-    document.getElementById('conteudo').innerHTML = `
-      <div class="card-entrega em-andamento">
+    if (p.status === 'pendente' && !isHistorico) {
+      acoesHtml = `<div class="acoes"><button class="btn-aceitar" onclick="aceitarPedido(${p.id_pedido})">✓ Aceitar entrega</button></div>`;
+    } else if (p.status === 'aceito' && !isHistorico) {
+      acoesHtml = `<div class="acoes">
+        ${mapsBtn}
+        <button class="btn-caminho" onclick="atualizarStatus2(${p.id_pedido}, 'a_caminho')">🚴 Saí para entregar</button>
+      </div>`;
+    } else if (p.status === 'a_caminho' && !isHistorico) {
+      acoesHtml = `<div class="acoes">
+        ${mapsBtn}
+        <button class="btn-entregue" onclick="atualizarStatus2(${p.id_pedido}, 'entregue')">✓ Confirmar entrega</button>
+      </div>`;
+    }
+
+    return `
+      <div class="card-entrega ${classesExtras}">
         <div class="entrega-header">
           <div class="entrega-id">Pedido #${p.id_pedido}</div>
           <span class="entrega-status s-${p.status}">${statusLabel[p.status] || p.status}</span>
@@ -394,15 +459,13 @@
         <div class="info-grid">
           <div class="info-item"><label>Cliente</label><span>${p.nome_cliente}</span></div>
           <div class="info-item"><label>Horta</label><span>${p.nome_horta}</span></div>
-          <div class="info-item"><label>Endereço de entrega</label><span>${p.endereco_entrega}</span></div>
-          <div class="info-item"><label>Valor total</label><span>R$ ${parseFloat(p.valor_total).toFixed(2)}</span></div>
+          <div class="info-item"><label>Endereço de Entrega</label><span>${p.endereco_entrega}</span></div>
+          <div class="info-item"><label>Valor Total</label><span>R$ ${parseFloat(p.valor_total).toFixed(2)}</span></div>
+          ${p.observacao ? `<div class="info-item"><label>Observação</label><span>${p.observacao}</span></div>` : ''}
           ${p.telefone_cliente ? `<div class="info-item"><label>Telefone</label><span>${p.telefone_cliente}</span></div>` : ''}
         </div>
         ${renderItens(p.itens)}
-        <div class="acoes">
-          ${p.status === 'aceito' ? `<button class="btn-caminho" onclick="atualizarStatus2(${p.id_pedido}, 'a_caminho')">🚴 Saí para entregar</button>` : ''}
-          ${p.status === 'a_caminho' ? `<button class="btn-entregue" onclick="atualizarStatus2(${p.id_pedido}, 'entregue')">✓ Confirmar entrega</button>` : ''}
-        </div>
+        ${acoesHtml}
       </div>`;
   }
 
@@ -410,10 +473,10 @@
     if (!itens || !itens.length) return '';
     return `
       <div class="itens-lista">
-        <div class="itens-titulo">Itens do pedido</div>
+        <div class="itens-titulo">Itens do Pedido</div>
         ${itens.map(i => `
           <div class="item-linha">
-            <span>${i.nm_produto} — ${i.quantidade} ${i.unidade_medida_padrao || 'un'}</span>
+            <span>${i.nm_produto} — ${parseFloat(i.quantidade)} ${i.unidade_medida_padrao || 'unidade'}</span>
             <span>R$ ${(i.quantidade * i.preco_unitario).toFixed(2)}</span>
           </div>`).join('')}
       </div>`;
