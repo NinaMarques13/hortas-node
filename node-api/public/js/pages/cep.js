@@ -53,7 +53,7 @@ async function renderCep() {
 
 async function carregarHortasCep() {
   try {
-    const data = await Api.get('/api/hortas');
+    const data = await Api.get('/hortas');
     const hortas = data.hortas || [];
     const sel = document.getElementById('cepHortaSelect');
 
@@ -81,7 +81,7 @@ async function onHortaChange() {
   if (!idHorta) return;
 
   try {
-    const data = await Api.get(`/api/estoques/horta/${idHorta}`);
+    const data = await Api.get(`/estoques/horta/${idHorta}`);
     const estoques = data.estoques || [];
 
     if (estoques.length) {
@@ -103,7 +103,7 @@ async function executarAnalise() {
   resultado.innerHTML = '<div class="spinner-center"><div class="spinner"></div></div>';
 
   try {
-    let url = `/api/cep/horta/${idHorta}?periodo=${periodo}`;
+    let url = `/cep/horta/${idHorta}?periodo=${periodo}`;
     if (idProduto) url += `&produto_id=${idProduto}`;
 
     const dados = await Api.get(url);
