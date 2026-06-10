@@ -121,6 +121,32 @@ function interpretarHistograma(tabela) {
   return 'assimétrico à esquerda — processo controlado por limite inferior';
 }
 
+/**
+ * Limites de controle para carta de valores individuais (I-chart).
+ * LC  = x̄  (linha central)
+ * LSC = x̄ + 3S  (limite superior de controle)
+ * LIC = x̄ − 3S  (limite inferior de controle)
+ */
+function calcularLimitesControle(media, desvioPadrao) {
+  return {
+    lc: media,
+    lsc: media + 3 * desvioPadrao,
+    lic: media - 3 * desvioPadrao,
+  };
+}
+
+/**
+ * Avalia cada ponto da série em relação aos limites de controle,
+ * marcando os que caem fora (causas especiais de variação).
+ */
+function avaliarPontosControle(valores, limites) {
+  return valores.map((v, i) => ({
+    indice: i + 1,
+    valor: v,
+    fora_controle: v > limites.lsc || v < limites.lic,
+  }));
+}
+
 module.exports = {
   calcularMedia,
   calcularAmplitude,
@@ -128,4 +154,6 @@ module.exports = {
   calcularCV,
   gerarTabelaFrequencias,
   interpretarHistograma,
+  calcularLimitesControle,
+  avaliarPontosControle,
 };

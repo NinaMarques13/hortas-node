@@ -3,6 +3,7 @@
 // =====================================================
 
 let cepChartInstance = null;
+let cepCartaInstance = null;
 
 async function renderCep() {
   const container = getPageContainer();
@@ -135,6 +136,13 @@ function renderResultadoCep(d) {
       ${statCard('Mínimo', d.xmin, '')}
       ${statCard('Máximo', d.xmax, '')}
     </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem;">
+      ${statCard('LSC (x̄ + 3S)', d.lsc, '')}
+      ${statCard('LC (x̄)', d.lc, '')}
+      ${statCard('LIC (x̄ − 3S)', d.lic, '')}
+      ${statCard('Pontos fora de controle', d.pontos_fora_controle, '', d.pontos_fora_controle > 0 ? 'var(--danger)' : 'var(--primary)')}
+    </div>
   `;
 
   // Tabela de frequências
@@ -172,6 +180,21 @@ function renderResultadoCep(d) {
     </div>
   ` : '';
 
+  // Carta de controle
+  const statusControle = d.pontos_fora_controle > 0
+    ? `<span style="color:var(--danger);font-weight:bold;">${d.pontos_fora_controle} ponto(s) fora de controle — investigar causa especial</span>`
+    : `<span style="color:var(--primary);font-weight:bold;">processo sob controle estatístico</span>`;
+
+  const cartaHtml = `
+    <div class="card" style="margin-bottom:1.5rem;">
+      <h3 style="margin-bottom:0.5rem;">Carta de Controle (valores individuais)</h3>
+      <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem;">
+        LSC = x̄ + 3S · LC = x̄ · LIC = x̄ − 3S — ${statusControle}
+      </p>
+      <canvas id="cepCarta" style="max-height:340px;"></canvas>
+    </div>
+  `;
+
   // Histograma
   const histogramaHtml = `
     <div class="card" style="margin-bottom:1.5rem;">
@@ -183,15 +206,16 @@ function renderResultadoCep(d) {
     </div>
   `;
 
-  resultado.innerHTML = statsHtml + tabelaHtml + histogramaHtml;
+  resultado.innerHTML = statsHtml + cartaHtml + tabelaHtml + histogramaHtml;
+  renderCartaControle(d);
   renderHistograma(d.tabela_frequencias);
 }
 
-function statCard(label, valor, sufixo) {
+function statCard(label, valor, sufixo, cor = 'var(--primary)') {
   const fmt = typeof valor === 'number' ? valor.toFixed(2) : valor;
   return `
     <div class="card" style="text-align:center;padding:1rem;">
-      <div style="font-size:1.4rem;font-weight:bold;color:var(--primary);">${fmt}${sufixo}</div>
+      <div style="font-size:1.4rem;font-weight:bold;color:${cor};">${fmt}${sufixo}</div>
       <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.25rem;">${label}</div>
     </div>
   `;
@@ -203,6 +227,90 @@ function thStyle() {
 
 function tdStyle() {
   return 'padding:0.5rem 1rem;text-align:center;';
+}
+
+function renderCartaControle(d) {
+  const dados = d.dados_brutos || [];
+  if (!dados.length) return;
+
+  if (cepCartaInstance) {
+    cepCartaInstance.destroy();
+    cepCartaInstance = null;
+  }
+
+  const valores = dados.map(m => parseFloat(m.quantidade));
+  const labels = dados.map((m, i) => {
+    const dt = m.data ? new Date(m.data) : null;
+    return dt ? dt.toLocaleDateString('pt-BR') : String(i + 1);
+  });
+
+  // Pontos fora dos limites destacados em vermelho
+  const coresPontos = valores.map(v =>
+    (v > d.lsc || v < d.lic) ? 'rgba(220, 53, 69, 1)' : 'rgba(46, 160, 67, 1)'
+  );
+  const raioPontos = valores.map(v =>
+    (v > d.lsc || v < d.lic) ? 5 : 2.5
+  );
+
+  const linhaConstante = (valor, cor, dash, label) => ({
+    label,
+    data: valores.map(() => valor),
+    borderColor: cor,
+    borderWidth: 1.5,
+    borderDash: dash,
+    pointRadius: 0,
+    fill: false,
+  });
+
+  const ctx = document.getElementById('cepCarta').getContext('2d');
+  cepCartaInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Quantidade',
+          data: valores,
+          borderColor: 'rgba(120, 140, 160, 0.9)',
+          backgroundColor: 'rgba(120, 140, 160, 0.1)',
+          borderWidth: 1.5,
+          pointBackgroundColor: coresPontos,
+          pointBorderColor: coresPontos,
+          pointRadius: raioPontos,
+          tension: 0.1,
+          fill: false,
+        },
+        linhaConstante(d.lsc, 'rgba(220, 53, 69, 0.9)', [6, 4], 'LSC'),
+        linhaConstante(d.lc, 'rgba(46, 160, 67, 0.9)', [], 'LC (média)'),
+        linhaConstante(d.lic, 'rgba(220, 53, 69, 0.9)', [6, 4], 'LIC'),
+      ],
+    },
+    options: {
+      responsive: true,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { display: true, position: 'top' },
+        tooltip: {
+          callbacks: {
+            afterBody: (items) => {
+              const v = valores[items[0].dataIndex];
+              if (v > d.lsc || v < d.lic) return '⚠️ Fora de controle';
+              return '';
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Movimentação (ordem temporal)' },
+          ticks: { maxTicksLimit: 12, font: { size: 10 } },
+        },
+        y: {
+          title: { display: true, text: 'Quantidade' },
+        },
+      },
+    },
+  });
 }
 
 function renderHistograma(tabela) {

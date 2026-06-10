@@ -12,6 +12,8 @@ const {
   calcularCV,
   gerarTabelaFrequencias,
   interpretarHistograma,
+  calcularLimitesControle,
+  avaliarPontosControle,
 } = require('../utils/estatistica');
 
 // Monta o objeto de resposta CEP a partir de um array de quantidades + dados brutos
@@ -24,6 +26,11 @@ function montarResposta(quantidades, dadosBrutos) {
   const tabelaFrequencias = gerarTabelaFrequencias(quantidades);
   const interpretacao = interpretarHistograma(tabelaFrequencias);
 
+  // Carta de controle (valores individuais): LC = x̄, LSC/LIC = x̄ ± 3S
+  const limites = calcularLimitesControle(media, desvioPadrao);
+  const pontosControle = avaliarPontosControle(quantidades, limites);
+  const pontosForaControle = pontosControle.filter(p => p.fora_controle).length;
+
   return {
     n,
     media: parseFloat(media.toFixed(4)),
@@ -32,6 +39,10 @@ function montarResposta(quantidades, dadosBrutos) {
     coeficiente_variacao: parseFloat(cv.toFixed(2)),
     xmin: n ? Math.min(...quantidades) : 0,
     xmax: n ? Math.max(...quantidades) : 0,
+    lc: parseFloat(limites.lc.toFixed(4)),
+    lsc: parseFloat(limites.lsc.toFixed(4)),
+    lic: parseFloat(limites.lic.toFixed(4)),
+    pontos_fora_controle: pontosForaControle,
     tabela_frequencias: tabelaFrequencias,
     interpretacao,
     dados_brutos: dadosBrutos,
