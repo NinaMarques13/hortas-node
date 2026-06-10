@@ -52,6 +52,10 @@ function renderAppShell() {
           <a href="#/hortas" class="nav-item" data-route="/hortas">
             <span class="icon">🌱</span> Minhas Hortas
           </a>
+          <div class="nav-section-title">Análise</div>
+          <a href="#/cep" class="nav-item" data-route="/cep">
+            <span class="icon">📈</span> CEP
+          </a>
           <div class="nav-section-title">Conta</div>
           <a href="#/profile" class="nav-item" data-route="/profile">
             <span class="icon">👤</span> Meu Perfil
@@ -124,7 +128,8 @@ document.addEventListener('DOMContentLoaded', () => {
     .add('/dashboard', () => { ensureAppShell(); renderDashboard(); }, { auth: true })
     .add('/hortas', () => { ensureAppShell(); renderHortasManage(); }, { auth: true })
     .add('/hortas/estoque/:id', (params) => { ensureAppShell(); renderEstoqueManage(params); }, { auth: true })
-    .add('/profile', () => { ensureAppShell(); renderProfile(); }, { auth: true });
+    .add('/profile', () => { ensureAppShell(); renderProfile(); }, { auth: true })
+    .add('/cep', () => { ensureAppShell(); renderCep(); }, { auth: true });
 
   Router.init('app');
 

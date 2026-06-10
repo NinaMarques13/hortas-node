@@ -9,6 +9,7 @@
     "migrate": "node src/migrate.js",
     "seed": "node src/seed.js",
     "seed:dados": "node src/seed-dados.js",
+    "seed:cep": "node src/seed-cep.js",
     "setup": "node src/migrate.js && node src/seed.js"
   },
   "dependencies": {
