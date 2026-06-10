@@ -4,6 +4,13 @@
 
 let cepChartInstance = null;
 let cepCartaInstance = null;
+// Instâncias de gráfico da aba Operação
+let cepEntregaInstance = null;
+let cepAceiteInstance = null;
+let cepXbarInstance = null;
+let cepRInstance = null;
+let cepPInstance = null;
+let cepCInstance = null;
 
 async function renderCep() {
   const container = getPageContainer();
@@ -12,38 +19,63 @@ async function renderCep() {
     <div class="page-container">
       <div class="page-header">
         <h2>📈 Controle Estatístico de Processos</h2>
-        <p>Análise estatística das movimentações de estoque por horta e produto</p>
+        <p>Análise estatística de estoque e da operação da plataforma</p>
       </div>
 
-      <div class="card" style="margin-bottom:1.5rem;">
-        <div class="form-section-title">Filtros</div>
-        <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;">
-          <div class="form-group" style="flex:1;min-width:180px;margin-bottom:0;">
-            <label>Horta</label>
-            <select id="cepHortaSelect" class="form-control">
-              <option value="">Carregando...</option>
-            </select>
+      <div style="display:flex;gap:8px;margin-bottom:1.5rem;border-bottom:1px solid var(--border);padding-bottom:0;">
+        <button id="cepTabEstoque" class="btn btn-primary" onclick="cepTrocarAba('estoque')">📦 Estoque</button>
+        <button id="cepTabOperacao" class="btn btn-ghost" onclick="cepTrocarAba('operacao')">🚚 Operação</button>
+      </div>
+
+      <!-- ABA ESTOQUE -->
+      <div id="cepPaneEstoque">
+        <div class="card" style="margin-bottom:1.5rem;">
+          <div class="form-section-title">Filtros</div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;">
+            <div class="form-group" style="flex:1;min-width:180px;margin-bottom:0;">
+              <label>Horta</label>
+              <select id="cepHortaSelect" class="form-control">
+                <option value="">Carregando...</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex:1;min-width:180px;margin-bottom:0;">
+              <label>Produto <span style="color:var(--text-muted);font-weight:400;">(opcional)</span></label>
+              <select id="cepProdutoSelect" class="form-control" disabled>
+                <option value="">Todos os produtos</option>
+              </select>
+            </div>
+            <div class="form-group" style="min-width:150px;margin-bottom:0;">
+              <label>Período</label>
+              <select id="cepPeriodoSelect" class="form-control">
+                <option value="30">30 dias</option>
+                <option value="60">60 dias</option>
+                <option value="90" selected>90 dias</option>
+                <option value="180">180 dias</option>
+              </select>
+            </div>
+            <button id="cepBtnAnalisar" class="btn btn-primary" disabled>Analisar</button>
           </div>
-          <div class="form-group" style="flex:1;min-width:180px;margin-bottom:0;">
-            <label>Produto <span style="color:var(--text-muted);font-weight:400;">(opcional)</span></label>
-            <select id="cepProdutoSelect" class="form-control" disabled>
-              <option value="">Todos os produtos</option>
-            </select>
-          </div>
-          <div class="form-group" style="min-width:150px;margin-bottom:0;">
-            <label>Período</label>
-            <select id="cepPeriodoSelect" class="form-control">
-              <option value="30">30 dias</option>
-              <option value="60">60 dias</option>
-              <option value="90" selected>90 dias</option>
-              <option value="180">180 dias</option>
-            </select>
-          </div>
-          <button id="cepBtnAnalisar" class="btn btn-primary" disabled>Analisar</button>
         </div>
+        <div id="cepResultado"></div>
       </div>
 
-      <div id="cepResultado"></div>
+      <!-- ABA OPERAÇÃO -->
+      <div id="cepPaneOperacao" style="display:none;">
+        <div class="card" style="margin-bottom:1.5rem;">
+          <div class="form-section-title">Filtros</div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;">
+            <div class="form-group" style="min-width:150px;margin-bottom:0;">
+              <label>Período</label>
+              <select id="cepOpPeriodoSelect" class="form-control">
+                <option value="90">90 dias</option>
+                <option value="180" selected>180 dias</option>
+              </select>
+            </div>
+            <button id="cepOpBtnAnalisar" class="btn btn-primary">Analisar</button>
+          </div>
+        </div>
+        <div id="cepOperacaoResultado"></div>
+      </div>
     </div>
   `;
 
@@ -51,6 +83,15 @@ async function renderCep() {
 
   document.getElementById('cepHortaSelect').addEventListener('change', onHortaChange);
   document.getElementById('cepBtnAnalisar').addEventListener('click', executarAnalise);
+  document.getElementById('cepOpBtnAnalisar').addEventListener('click', executarAnaliseOperacao);
+}
+
+function cepTrocarAba(aba) {
+  const isEstoque = aba === 'estoque';
+  document.getElementById('cepPaneEstoque').style.display = isEstoque ? 'block' : 'none';
+  document.getElementById('cepPaneOperacao').style.display = isEstoque ? 'none' : 'block';
+  document.getElementById('cepTabEstoque').className = isEstoque ? 'btn btn-primary' : 'btn btn-ghost';
+  document.getElementById('cepTabOperacao').className = isEstoque ? 'btn btn-ghost' : 'btn btn-primary';
 }
 
 async function carregarHortasCep() {
@@ -310,6 +351,204 @@ function renderCartaControle(d) {
         y: {
           title: { display: true, text: 'Quantidade' },
         },
+      },
+    },
+  });
+}
+
+// =====================================================
+// ABA OPERAÇÃO — KPIs e cartas X-R / P / C (seções 4.3–5.4)
+// =====================================================
+
+async function executarAnaliseOperacao() {
+  const periodo = document.getElementById('cepOpPeriodoSelect').value;
+  const resultado = document.getElementById('cepOperacaoResultado');
+  resultado.innerHTML = '<div class="spinner-center"><div class="spinner"></div></div>';
+
+  try {
+    const d = await Api.get(`/cep/operacao?periodo=${periodo}`);
+
+    if (!d || d.status !== 'sucesso') {
+      resultado.innerHTML = `<div class="card"><p style="color:var(--danger);">Erro ao carregar dados operacionais.</p></div>`;
+      return;
+    }
+    if (d.n === 0) {
+      resultado.innerHTML = `<div class="card"><p style="color:var(--text-muted);">${d.mensagem}</p></div>`;
+      return;
+    }
+    renderResultadoOperacao(d);
+  } catch (e) {
+    resultado.innerHTML = `<div class="card"><p style="color:var(--danger);">Erro: ${e.message}</p></div>`;
+  }
+}
+
+function statusLinha(pontos) {
+  const fora = (pontos || []).filter(p => p.fora_controle).length;
+  return fora > 0
+    ? `<span style="color:var(--danger);font-weight:bold;">${fora} ponto(s) fora de controle</span>`
+    : `<span style="color:var(--primary);font-weight:bold;">processo sob controle</span>`;
+}
+
+function renderResultadoOperacao(d) {
+  const resultado = document.getElementById('cepOperacaoResultado');
+
+  // Destruir instâncias anteriores
+  [cepEntregaInstance, cepAceiteInstance, cepXbarInstance, cepRInstance, cepPInstance, cepCInstance]
+    .forEach(inst => { if (inst) inst.destroy(); });
+  cepEntregaInstance = cepAceiteInstance = cepXbarInstance = cepRInstance = cepPInstance = cepCInstance = null;
+
+  const kpisHtml = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:1rem;margin-bottom:1.5rem;">
+      ${statCard('Taxa de Conversão', d.kpis.taxa_conversao, '%')}
+      ${statCard('NPS', d.kpis.nps, '', d.kpis.nps >= 50 ? 'var(--primary)' : 'var(--danger)')}
+      ${statCard('TMR (suporte)', d.kpis.tmr, ' min')}
+      ${statCard('Total de pedidos', d.kpis.total_pedidos, '')}
+    </div>
+  `;
+
+  const cardChart = (titulo, formula, status, canvasId, canvasId2) => `
+    <div class="card" style="margin-bottom:1.5rem;">
+      <h3 style="margin-bottom:0.5rem;">${titulo}</h3>
+      <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem;">${formula}${status ? ' — ' + status : ''}</p>
+      <canvas id="${canvasId}" style="max-height:320px;"></canvas>
+      ${canvasId2 ? `<canvas id="${canvasId2}" style="max-height:300px;margin-top:1rem;"></canvas>` : ''}
+    </div>
+  `;
+
+  let html = kpisHtml;
+
+  // 5.1 — Entrega e Aceite (I-charts)
+  html += cardChart(
+    '5.1 Tempo de Entrega e Aceite — Carta de Valores Individuais',
+    'LSC = x̄ + 3S · LC = x̄ · LIC = x̄ − 3S (entrega: ' + statusLinha(d.entrega.pontos) + ' · aceite: ' + statusLinha(d.aceite.pontos) + ')',
+    '', 'cepEntrega', 'cepAceite'
+  );
+
+  // 5.2 — Preparo (X-R)
+  if (d.preparo) {
+    html += cardChart(
+      '5.2 Tempo de Preparo e Embalagem — Carta X-R',
+      `n=${d.preparo.n} · X̿=${d.preparo.xBarBar.toFixed(2)} · R̄=${d.preparo.rBar.toFixed(2)} (X̄: ${statusLinha(d.preparo.xbar.pontos)} · R: ${statusLinha(d.preparo.r.pontos)})`,
+      '', 'cepXbar', 'cepR'
+    );
+  }
+
+  // 5.3 — Avarias (P)
+  if (d.avarias) {
+    html += cardChart(
+      '5.3 Taxa de Produtos Avariados — Carta P',
+      `LSC = p̄ + 3√[p̄(1−p̄)/n] · p̄=${(d.avarias.pBar * 100).toFixed(2)}% — ${statusLinha(d.avarias.pontos)}`,
+      '', 'cepP'
+    );
+  }
+
+  // 5.4 — Ruptura (C)
+  if (d.ruptura) {
+    html += cardChart(
+      '5.4 Índice de Ruptura de Estoque — Carta C',
+      `LSC = c̄ + 3√c̄ · c̄=${d.ruptura.cBar.toFixed(2)} — ${statusLinha(d.ruptura.pontos)}`,
+      '', 'cepC'
+    );
+  }
+
+  resultado.innerHTML = html;
+
+  // Construir gráficos
+  cepEntregaInstance = construirIChart('cepEntrega', d.entrega, { serieLabel: 'Tempo de entrega (min)', xLabel: 'Pedido (ordem temporal)', yLabel: 'Minutos' });
+  cepAceiteInstance = construirIChart('cepAceite', d.aceite, { serieLabel: 'Tempo de aceite (min)', xLabel: 'Pedido (ordem temporal)', yLabel: 'Minutos' });
+  if (d.preparo) {
+    cepXbarInstance = construirIChart('cepXbar', d.preparo.xbar, { serieLabel: 'Média do subgrupo (X̄)', xLabel: 'Semana', yLabel: 'Minutos' });
+    cepRInstance = construirIChart('cepR', d.preparo.r, { serieLabel: 'Amplitude do subgrupo (R)', xLabel: 'Semana', yLabel: 'Minutos' });
+  }
+  if (d.avarias) cepPInstance = construirPChart('cepP', d.avarias);
+  if (d.ruptura) cepCInstance = construirIChart('cepC', d.ruptura, { serieLabel: 'Rupturas na semana', xLabel: 'Semana', yLabel: 'Ocorrências', yInteger: true });
+}
+
+// Builder genérico de carta com limites constantes (I, X̄, R, C)
+function construirIChart(canvasId, serie, opts) {
+  const valores = serie.pontos.map(p => p.valor);
+  const labels = serie.pontos.map((p, i) => p.rotulo || String(i + 1));
+  const cores = serie.pontos.map(p => (p.fora_controle ? 'rgba(220,53,69,1)' : 'rgba(46,160,67,1)'));
+  const raios = serie.pontos.map(p => (p.fora_controle ? 5 : 2.5));
+
+  const linhaConstante = (valor, cor, dash, label) => ({
+    label, data: valores.map(() => valor), borderColor: cor,
+    borderWidth: 1.5, borderDash: dash, pointRadius: 0, fill: false,
+  });
+
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  return new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: opts.serieLabel,
+          data: valores,
+          borderColor: 'rgba(120,140,160,0.9)',
+          borderWidth: 1.5,
+          pointBackgroundColor: cores,
+          pointBorderColor: cores,
+          pointRadius: raios,
+          tension: 0.1,
+          fill: false,
+        },
+        linhaConstante(serie.lsc, 'rgba(220,53,69,0.9)', [6, 4], 'LSC'),
+        linhaConstante(serie.lc, 'rgba(46,160,67,0.9)', [], 'LC'),
+        linhaConstante(serie.lic, 'rgba(220,53,69,0.9)', [6, 4], 'LIC'),
+      ],
+    },
+    options: {
+      responsive: true,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: { legend: { display: true, position: 'top' } },
+      scales: {
+        x: { title: { display: true, text: opts.xLabel }, ticks: { maxTicksLimit: 12, font: { size: 10 } } },
+        y: { title: { display: true, text: opts.yLabel }, ...(opts.yInteger ? { ticks: { stepSize: 1 }, beginAtZero: true } : {}) },
+      },
+    },
+  });
+}
+
+// Builder da carta P (limites variáveis por ponto, eixo em %)
+function construirPChart(canvasId, avarias) {
+  const pts = avarias.pontos;
+  const labels = pts.map(p => p.rotulo);
+  const cores = pts.map(p => (p.fora_controle ? 'rgba(220,53,69,1)' : 'rgba(46,160,67,1)'));
+  const raios = pts.map(p => (p.fora_controle ? 5 : 3));
+
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  return new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Fração defeituosa (p)',
+          data: pts.map(p => p.valor),
+          borderColor: 'rgba(120,140,160,0.9)',
+          borderWidth: 1.5,
+          pointBackgroundColor: cores,
+          pointBorderColor: cores,
+          pointRadius: raios,
+          tension: 0.1,
+          fill: false,
+        },
+        { label: 'LSC', data: pts.map(p => p.lsc), borderColor: 'rgba(220,53,69,0.9)', borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0, stepped: true, fill: false },
+        { label: 'LC (p̄)', data: pts.map(p => p.lc), borderColor: 'rgba(46,160,67,0.9)', borderWidth: 1.5, pointRadius: 0, fill: false },
+        { label: 'LIC', data: pts.map(p => p.lic), borderColor: 'rgba(220,53,69,0.9)', borderWidth: 1.5, borderDash: [6, 4], pointRadius: 0, stepped: true, fill: false },
+      ],
+    },
+    options: {
+      responsive: true,
+      interaction: { intersect: false, mode: 'index' },
+      plugins: {
+        legend: { display: true, position: 'top' },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${(ctx.parsed.y * 100).toFixed(2)}%` } },
+      },
+      scales: {
+        x: { title: { display: true, text: 'Semana' } },
+        y: { title: { display: true, text: 'Fração defeituosa' }, beginAtZero: true, ticks: { callback: v => (v * 100).toFixed(0) + '%' } },
       },
     },
   });

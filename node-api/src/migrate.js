@@ -148,6 +148,30 @@ async function migrate() {
   `);
     console.log('  ✅ saidas_estoque');
 
+    // --- pedidos (CEP operacional) ---
+    await conn.query(`
+    CREATE TABLE IF NOT EXISTS pedidos (
+      id_pedido         INT AUTO_INCREMENT PRIMARY KEY,
+      hortas_id_hortas  INT NOT NULL,
+      dt_pedido         DATETIME NOT NULL,
+      semana_ano        SMALLINT NOT NULL,
+      status            ENUM('finalizado','cancelado_ruptura','cancelado_outro','carrinho_abandonado') NOT NULL,
+      convertido        TINYINT(1) NOT NULL DEFAULT 0,
+      tempo_aceite      INT DEFAULT NULL,
+      tempo_preparo     INT DEFAULT NULL,
+      tempo_entrega     INT DEFAULT NULL,
+      qtd_itens         INT DEFAULT NULL,
+      qtd_avariados     INT DEFAULT NULL,
+      ruptura_estoque   TINYINT(1) NOT NULL DEFAULT 0,
+      nps_nota          TINYINT DEFAULT NULL,
+      tempo_resposta_suporte INT DEFAULT NULL,
+      CONSTRAINT fk_pedidos_hortas FOREIGN KEY (hortas_id_hortas)
+        REFERENCES hortas(id_hortas)
+        ON DELETE CASCADE ON UPDATE CASCADE
+    )
+  `);
+    console.log('  ✅ pedidos');
+
     // --- seguranca_produtor ---
     await conn.query(`
     CREATE TABLE IF NOT EXISTS seguranca_produtor (

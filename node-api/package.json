@@ -10,6 +10,7 @@
     "seed": "node src/seed.js",
     "seed:dados": "node src/seed-dados.js",
     "seed:cep": "node src/seed-cep.js",
+    "seed:operacao": "node src/seed-operacao.js",
     "setup": "node src/migrate.js && node src/seed.js"
   },
   "dependencies": {

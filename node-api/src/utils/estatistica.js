@@ -147,6 +147,131 @@ function avaliarPontosControle(valores, limites) {
   }));
 }
 
+// =====================================================
+// Cartas de controle por subgrupo (X-R, P, C)
+// =====================================================
+
+/**
+ * Fatores para cartas X-R por tamanho de subgrupo n (n = 2..10).
+ * Tabela padrão de Controle Estatístico de Processos.
+ */
+const CONSTANTES_XR = {
+  2:  { A2: 1.880, D3: 0,     D4: 3.267 },
+  3:  { A2: 1.023, D3: 0,     D4: 2.574 },
+  4:  { A2: 0.729, D3: 0,     D4: 2.282 },
+  5:  { A2: 0.577, D3: 0,     D4: 2.114 },
+  6:  { A2: 0.483, D3: 0,     D4: 2.004 },
+  7:  { A2: 0.419, D3: 0.076, D4: 1.924 },
+  8:  { A2: 0.373, D3: 0.136, D4: 1.864 },
+  9:  { A2: 0.337, D3: 0.184, D4: 1.816 },
+  10: { A2: 0.308, D3: 0.223, D4: 1.777 },
+};
+
+/**
+ * Carta X-R (médias e amplitudes por subgrupo).
+ * Entrada: subgrupos = [{ rotulo, valores: number[] }]
+ * X-bar: LC = X̿, LSC = X̿ + A2·R̄, LIC = X̿ − A2·R̄
+ * R:     LC = R̄, LSC = D4·R̄,     LIC = D3·R̄
+ */
+function calcularCartaXR(subgrupos) {
+  const validos = (subgrupos || []).filter(s => s.valores && s.valores.length >= 2);
+  if (validos.length < 1) return null;
+
+  const medias = validos.map(s => calcularMedia(s.valores));
+  const amplitudes = validos.map(s => calcularAmplitude(s.valores));
+
+  const xBarBar = calcularMedia(medias);
+  const rBar = calcularMedia(amplitudes);
+
+  // n representativo = média dos tamanhos, clampado a [2, 10] para lookup
+  const tamMedio = calcularMedia(validos.map(s => s.valores.length));
+  const n = Math.min(10, Math.max(2, Math.round(tamMedio)));
+  const { A2, D3, D4 } = CONSTANTES_XR[n];
+
+  const xbar = {
+    lc: xBarBar,
+    lsc: xBarBar + A2 * rBar,
+    lic: xBarBar - A2 * rBar,
+    pontos: validos.map((s, i) => ({
+      indice: i + 1,
+      rotulo: s.rotulo,
+      valor: medias[i],
+      fora_controle: medias[i] > xBarBar + A2 * rBar || medias[i] < xBarBar - A2 * rBar,
+    })),
+  };
+
+  const r = {
+    lc: rBar,
+    lsc: D4 * rBar,
+    lic: D3 * rBar,
+    pontos: validos.map((s, i) => ({
+      indice: i + 1,
+      rotulo: s.rotulo,
+      valor: amplitudes[i],
+      fora_controle: amplitudes[i] > D4 * rBar || amplitudes[i] < D3 * rBar,
+    })),
+  };
+
+  return { n, xBarBar, rBar, xbar, r };
+}
+
+/**
+ * Carta P (fração defeituosa por subgrupo, limites variáveis com n_i).
+ * Entrada: subgrupos = [{ rotulo, inspecionados, defeituosos }]
+ * p̄ = Σd / Σn ; LSC_i = p̄ + 3√(p̄(1−p̄)/n_i) ; LIC_i = max(0, …)
+ */
+function calcularCartaP(subgrupos) {
+  const validos = (subgrupos || []).filter(s => s.inspecionados > 0);
+  if (!validos.length) return null;
+
+  const totalInsp = validos.reduce((soma, s) => soma + s.inspecionados, 0);
+  const totalDef = validos.reduce((soma, s) => soma + s.defeituosos, 0);
+  const pBar = totalInsp ? totalDef / totalInsp : 0;
+
+  const pontos = validos.map((s, i) => {
+    const p_i = s.defeituosos / s.inspecionados;
+    const sigma = Math.sqrt((pBar * (1 - pBar)) / s.inspecionados);
+    const lsc = pBar + 3 * sigma;
+    const lic = Math.max(0, pBar - 3 * sigma);
+    return {
+      indice: i + 1,
+      rotulo: s.rotulo,
+      valor: p_i,
+      n: s.inspecionados,
+      lc: pBar,
+      lsc,
+      lic,
+      fora_controle: p_i > lsc || p_i < lic,
+    };
+  });
+
+  return { pBar, pontos };
+}
+
+/**
+ * Carta C (contagem de ocorrências por período).
+ * Entrada: contagens = [{ rotulo, contagem }]
+ * c̄ = média ; LSC = c̄ + 3√c̄ ; LIC = max(0, c̄ − 3√c̄)
+ */
+function calcularCartaC(contagens) {
+  const dados = contagens || [];
+  if (!dados.length) return null;
+
+  const valores = dados.map(c => c.contagem);
+  const cBar = calcularMedia(valores);
+  const lsc = cBar + 3 * Math.sqrt(cBar);
+  const lic = Math.max(0, cBar - 3 * Math.sqrt(cBar));
+
+  const pontos = dados.map((c, i) => ({
+    indice: i + 1,
+    rotulo: c.rotulo,
+    valor: c.contagem,
+    fora_controle: c.contagem > lsc || c.contagem < lic,
+  }));
+
+  return { cBar, lc: cBar, lsc, lic, pontos };
+}
+
 module.exports = {
   calcularMedia,
   calcularAmplitude,
@@ -156,4 +281,8 @@ module.exports = {
   interpretarHistograma,
   calcularLimitesControle,
   avaliarPontosControle,
+  CONSTANTES_XR,
+  calcularCartaXR,
+  calcularCartaP,
+  calcularCartaC,
 };
