@@ -9,40 +9,42 @@ async function renderCep() {
   const container = getPageContainer();
 
   container.innerHTML = `
-    <div class="page-header">
-      <h2>📈 Controle Estatístico de Processos</h2>
-      <p class="page-subtitle">Análise estatística das movimentações de estoque por horta e produto</p>
-    </div>
-
-    <div class="card" style="margin-bottom:1.5rem;">
-      <h3 style="margin-bottom:1rem;">Filtros</h3>
-      <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;">
-        <div style="flex:1;min-width:180px;">
-          <label class="form-label">Horta</label>
-          <select id="cepHortaSelect" class="form-input">
-            <option value="">Carregando...</option>
-          </select>
-        </div>
-        <div style="flex:1;min-width:180px;">
-          <label class="form-label">Produto (opcional)</label>
-          <select id="cepProdutoSelect" class="form-input" disabled>
-            <option value="">Todos os produtos</option>
-          </select>
-        </div>
-        <div style="min-width:150px;">
-          <label class="form-label">Período (dias)</label>
-          <select id="cepPeriodoSelect" class="form-input">
-            <option value="30">30 dias</option>
-            <option value="60">60 dias</option>
-            <option value="90" selected>90 dias</option>
-            <option value="180">180 dias</option>
-          </select>
-        </div>
-        <button id="cepBtnAnalisar" class="btn btn-primary" disabled>Analisar</button>
+    <div class="page-container">
+      <div class="page-header">
+        <h2>📈 Controle Estatístico de Processos</h2>
+        <p>Análise estatística das movimentações de estoque por horta e produto</p>
       </div>
-    </div>
 
-    <div id="cepResultado"></div>
+      <div class="card" style="margin-bottom:1.5rem;">
+        <div class="form-section-title">Filtros</div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;">
+          <div class="form-group" style="flex:1;min-width:180px;margin-bottom:0;">
+            <label>Horta</label>
+            <select id="cepHortaSelect" class="form-control">
+              <option value="">Carregando...</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1;min-width:180px;margin-bottom:0;">
+            <label>Produto <span style="color:var(--text-muted);font-weight:400;">(opcional)</span></label>
+            <select id="cepProdutoSelect" class="form-control" disabled>
+              <option value="">Todos os produtos</option>
+            </select>
+          </div>
+          <div class="form-group" style="min-width:150px;margin-bottom:0;">
+            <label>Período</label>
+            <select id="cepPeriodoSelect" class="form-control">
+              <option value="30">30 dias</option>
+              <option value="60">60 dias</option>
+              <option value="90" selected>90 dias</option>
+              <option value="180">180 dias</option>
+            </select>
+          </div>
+          <button id="cepBtnAnalisar" class="btn btn-primary" disabled>Analisar</button>
+        </div>
+      </div>
+
+      <div id="cepResultado"></div>
+    </div>
   `;
 
   await carregarHortasCep();
@@ -151,7 +153,7 @@ function renderResultadoCep(d) {
       <h3 style="margin-bottom:1rem;">Tabela de Frequências</h3>
       <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
         <thead>
-          <tr style="background:var(--bg-hover);">
+          <tr style="background:var(--surface-hover);">
             <th style="${thStyle()}">Classe</th>
             <th style="${thStyle()}">Intervalo</th>
             <th style="${thStyle()}">Contagem (f)</th>
@@ -161,7 +163,7 @@ function renderResultadoCep(d) {
         </thead>
         <tbody>
           ${d.tabela_frequencias.map(row => `
-            <tr style="border-bottom:1px solid var(--border-color);">
+            <tr style="border-bottom:1px solid var(--border);">
               <td style="${tdStyle()}">${row.intervalo_classe}</td>
               <td style="${tdStyle()}">${row.intervalo}</td>
               <td style="${tdStyle()}">${row.contagem}</td>
@@ -169,7 +171,7 @@ function renderResultadoCep(d) {
               <td style="${tdStyle()}">${(row.frequencia_relativa * 100).toFixed(2)}%</td>
             </tr>
           `).join('')}
-          <tr style="background:var(--bg-hover);font-weight:bold;">
+          <tr style="background:var(--surface-hover);font-weight:bold;">
             <td style="${tdStyle()}" colspan="2">TOTAL</td>
             <td style="${tdStyle()}">${d.n}</td>
             <td style="${tdStyle()}">1.0000</td>
