@@ -7,26 +7,26 @@ require('dotenv').config({ path: require('path').resolve(__dirname, '..', '.env'
 const mysql = require('mysql2/promise');
 
 async function migrate() {
-    // Conecta SEM especificar banco (para poder criá-lo)
-    const conn = await mysql.createConnection({
-        host: process.env.DB_HOST,
-        port: parseInt(process.env.DB_PORT, 10) || 3306,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASS,
-        multipleStatements: true,
-    });
+  // Conecta SEM especificar banco (para poder criá-lo)
+  const conn = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT, 10) || 3306,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+    multipleStatements: true,
+  });
 
-    const dbName = process.env.DB_NAME || 'hortas_db';
+  const dbName = process.env.DB_NAME || 'hortas_db';
 
-    console.log(`🔧 Criando banco de dados "${dbName}"...`);
+  console.log(`🔧 Criando banco de dados "${dbName}"...`);
 
-    await conn.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
-    await conn.query(`USE \`${dbName}\``);
+  await conn.query(`CREATE DATABASE IF NOT EXISTS \`${dbName}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
+  await conn.query(`USE \`${dbName}\``);
 
-    console.log('📦 Criando tabelas...\n');
+  console.log('📦 Criando tabelas...\n');
 
-    // --- produtos ---
-    await conn.query(`
+  // --- produtos ---
+  await conn.query(`
     CREATE TABLE IF NOT EXISTS produtos (
       id_produto INT AUTO_INCREMENT PRIMARY KEY,
       nm_produto VARCHAR(100) NOT NULL UNIQUE,
@@ -34,10 +34,10 @@ async function migrate() {
       unidade_medida_padrao ENUM('g','kg','ton','unidade')
     )
   `);
-    console.log('  ✅ produtos');
+  console.log('  ✅ produtos');
 
-    // --- endereco_hortas ---
-    await conn.query(`
+  // --- endereco_hortas ---
+  await conn.query(`
     CREATE TABLE IF NOT EXISTS endereco_hortas (
       id_endereco_hortas INT AUTO_INCREMENT PRIMARY KEY,
       nm_rua VARCHAR(50),
@@ -48,10 +48,10 @@ async function migrate() {
       nm_pais VARCHAR(20) DEFAULT 'Brasil'
     )
   `);
-    console.log('  ✅ endereco_hortas');
+  console.log('  ✅ endereco_hortas');
 
-    // --- produtor ---
-    await conn.query(`
+  // --- produtor ---
+  await conn.query(`
     CREATE TABLE IF NOT EXISTS produtor (
       id_produtor INT AUTO_INCREMENT PRIMARY KEY,
       hortas_id_hortas INT,
@@ -67,10 +67,10 @@ async function migrate() {
       exibir_pix TINYINT(1) DEFAULT 1
     )
   `);
-    console.log('  ✅ produtor');
+  console.log('  ✅ produtor');
 
-    // --- hortas ---
-    await conn.query(`
+  // --- hortas ---
+  await conn.query(`
     CREATE TABLE IF NOT EXISTS hortas (
       id_hortas INT AUTO_INCREMENT PRIMARY KEY,
       endereco_hortas_id_endereco_hortas INT,
@@ -88,10 +88,10 @@ async function migrate() {
         ON DELETE CASCADE ON UPDATE CASCADE
     )
   `);
-    console.log('  ✅ hortas');
+  console.log('  ✅ hortas');
 
-    // --- estoques ---
-    await conn.query(`
+  // --- estoques ---
+  await conn.query(`
     CREATE TABLE IF NOT EXISTS estoques (
       id_estoques INT AUTO_INCREMENT PRIMARY KEY,
       hortas_id_hortas INT,
@@ -108,10 +108,10 @@ async function migrate() {
         ON DELETE CASCADE ON UPDATE CASCADE
     )
   `);
-    console.log('  ✅ estoques');
+  console.log('  ✅ estoques');
 
-    // --- entradas_estoque ---
-    await conn.query(`
+  // --- entradas_estoque ---
+  await conn.query(`
     CREATE TABLE IF NOT EXISTS entradas_estoque (
       id_entrada INT AUTO_INCREMENT PRIMARY KEY,
       estoques_id_estoques INT,
@@ -127,10 +127,10 @@ async function migrate() {
         ON DELETE SET NULL ON UPDATE CASCADE
     )
   `);
-    console.log('  ✅ entradas_estoque');
+  console.log('  ✅ entradas_estoque');
 
-    // --- saidas_estoque ---
-    await conn.query(`
+  // --- saidas_estoque ---
+  await conn.query(`
     CREATE TABLE IF NOT EXISTS saidas_estoque (
       id_saida INT AUTO_INCREMENT PRIMARY KEY,
       estoques_id_estoques INT,
@@ -146,10 +146,10 @@ async function migrate() {
         ON DELETE SET NULL ON UPDATE CASCADE
     )
   `);
-    console.log('  ✅ saidas_estoque');
+  console.log('  ✅ saidas_estoque');
 
-    // --- pedidos (CEP operacional) ---
-    await conn.query(`
+  // --- pedidos (CEP operacional) ---
+  await conn.query(`
     CREATE TABLE IF NOT EXISTS pedidos (
       id_pedido         INT AUTO_INCREMENT PRIMARY KEY,
       hortas_id_hortas  INT NOT NULL,
@@ -170,10 +170,10 @@ async function migrate() {
         ON DELETE CASCADE ON UPDATE CASCADE
     )
   `);
-    console.log('  ✅ pedidos');
+  console.log('  ✅ pedidos');
 
-    // --- seguranca_produtor ---
-    await conn.query(`
+  // --- seguranca_produtor ---
+  await conn.query(`
     CREATE TABLE IF NOT EXISTS seguranca_produtor (
       id_seguranca INT AUTO_INCREMENT PRIMARY KEY,
       produtor_id_produtor INT UNIQUE,
@@ -186,10 +186,10 @@ async function migrate() {
         ON DELETE CASCADE ON UPDATE CASCADE
     )
   `);
-    console.log('  ✅ seguranca_produtor');
+  console.log('  ✅ seguranca_produtor');
 
-    // --- session (para armazenar JWT) ---
-    await conn.query(`
+  // --- session (para armazenar JWT) ---
+  await conn.query(`
     CREATE TABLE IF NOT EXISTS session (
       id_session INT AUTO_INCREMENT PRIMARY KEY,
       jwt_token TEXT NOT NULL,
@@ -201,13 +201,13 @@ async function migrate() {
         ON DELETE CASCADE ON UPDATE CASCADE
     )
   `);
-    console.log('  ✅ session');
+  console.log('  ✅ session');
 
-    await conn.end();
-    console.log(`\n🎉 Migration concluída! Banco "${dbName}" pronto.`);
+  await conn.end();
+  console.log(`\n🎉 Migration concluída! Banco "${dbName}" pronto.`);
 }
 
 migrate().catch((err) => {
-    console.error('❌ Erro na migration:', err.message);
-    process.exit(1);
+  console.error('❌ Erro na migration:', err.message);
+  process.exit(1);
 });
