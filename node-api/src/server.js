@@ -9,14 +9,15 @@ const express = require('express');
 const corsMiddleware = require('./middlewares/cors');
 
 // Importação das rotas
-const authRoutes = require('./routes/auth.routes');
-const hortasRoutes = require('./routes/hortas.routes');
-const produtosRoutes = require('./routes/produtos.routes');
-const estoquesRoutes = require('./routes/estoques.routes');
+const authRoutes        = require('./routes/auth.routes');
+const hortasRoutes      = require('./routes/hortas.routes');
+const produtosRoutes    = require('./routes/produtos.routes');
+const estoquesRoutes    = require('./routes/estoques.routes');
 const movimentacoesRoutes = require('./routes/movimentacoes.routes');
-const dashboardRoutes = require('./routes/dashboard.routes');
-const entregadorRoutes = require('./routes/entregador.routes');
-const pedidosRoutes = require('./routes/pedidos.routes');
+const cepRoutes         = require('./routes/cep.routes');
+const dashboardRoutes   = require('./routes/dashboard.routes');
+const entregadorRoutes  = require('./routes/entregador.routes');
+const pedidosRoutes     = require('./routes/pedidos.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -40,16 +41,10 @@ app.use('/api/hortas', hortasRoutes);
 app.use('/api/produtos', produtosRoutes);
 app.use('/api/estoques', estoquesRoutes);
 app.use('/api/movimentacoes', movimentacoesRoutes);
+app.use('/api/cep', cepRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/entregador', entregadorRoutes);
 app.use('/api/pedidos', pedidosRoutes);
-
-// =====================================================
-// Rota raiz — redireciona para o dashboard (login do produtor)
-// =====================================================
-app.get('/', (_req, res) => {
-  res.redirect('/dashboard.html');
-});
 
 // =====================================================
 // Health check

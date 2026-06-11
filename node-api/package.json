@@ -1,10 +1,18 @@
 {
   "name": "api",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Hortas Marketplace — Backend API",
+  "main": "src/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "migrate": "node src/migrate.js",
+    "migrate:entregador": "node src/migrate_entregador.js",
+    "seed": "node src/seed.js",
+    "seed:dados": "node src/seed-dados.js",
+    "seed:cep": "node src/seed-cep.js",
+    "seed:operacao": "node src/seed-operacao.js",
+    "setup": "node src/migrate.js && node src/migrate_entregador.js && node src/seed.js && node src/seed-dados.js && node src/seed-cep.js && node src/seed-operacao.js"
   },
   "keywords": [],
   "author": "",

@@ -349,12 +349,10 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  const API = 'http://localhost:3000/api';
+  const API = window.location.origin + '/api';
   let token = localStorage.getItem('tokenCliente');
   let nomeCliente = localStorage.getItem('nomeCliente');
-  // usa token do produtor como fallback para acessar rotas protegidas
-  if (!token) token = localStorage.getItem('token');
-  let carrinho = []; // [{ estoque_id, nm_produto, quantidade, preco_unitario, max }]
+  let carrinho = []; // [{ estoque_id, nm_produto, quantidade, preco_unitario, max, unidade }]
 
   if (token) mostrarApp();
 
@@ -482,8 +480,8 @@
     atualizarCarrinho();
 
     // Busca estoques da horta
-    const data = await get(`/estoques?horta_id=${hortaId}`);
-    const estoques = data?.dados || [];
+    const data = await get(`/estoques/horta/${hortaId}`);
+    const estoques = data?.estoques || [];
 
     if (!estoques.length) {
       lista.innerHTML = '<div class="vazio"><div class="vazio-icon">🥬</div><div class="vazio-texto">Sem produtos em estoque nesta horta</div></div>';
@@ -492,15 +490,17 @@
 
     lista.innerHTML = '<div class="produtos-grid">' +
       estoques.map(e => {
-        const preco = parseFloat(e.preco || e.preco_unitario || 5).toFixed(2);
-        const nome = (e.nm_produto || e.produto || 'Produto').replace(/'/g, "\\'");
+        // Preço baseado no id do produto para variar de forma determinística
+        const base = 6 + (e.produto_id_produto || e.id_produto || 1) % 12;
+        const preco = parseFloat(base).toFixed(2);
+        const nome = (e.nm_produto || 'Produto').replace(/'/g, "\\'");
         const unidade = (e.unidade_medida_padrao || 'un').replace(/'/g, "\\'");
         const qtd = parseFloat(e.ds_quantidade);
         return `
         <div class="produto-card" id="card-${e.id_estoques}">
-          <div class="produto-nome">${e.nm_produto || e.produto || 'Produto'}</div>
+          <div class="produto-nome">${e.nm_produto || 'Produto'}</div>
           <div class="produto-estoque">Disponível: ${qtd} ${e.unidade_medida_padrao || 'un'}</div>
-          <div class="produto-preco">R$ ${preco}</div>
+          <div class="produto-preco">R$ ${preco}/${e.unidade_medida_padrao || 'un'}</div>
           <div class="produto-qty">
             <button class="qty-btn" onclick="alterarQty(${e.id_estoques}, -1)">−</button>
             <span class="qty-num" id="qty-${e.id_estoques}">0</span>

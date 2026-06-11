@@ -1,28 +1,15 @@
 // =====================================================
-// 🌐 Middleware de CORS
-// Permite requisições de origens configuradas
+// ✅ CORS Middleware
+// Equivale ao bloco de headers CORS do cors_comum.php
 // =====================================================
 
 const cors = require('cors');
 
-const origensPermitidas = process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(',').map(o => o.trim())
-    : ['http://localhost:3000', 'http://127.0.0.1:3000'];
-
 const corsMiddleware = cors({
-    origin: (origin, callback) => {
-        // Permite requisições sem origin (ex: Postman, curl)
-        if (!origin) return callback(null, true);
-
-        if (origensPermitidas.includes(origin) || origensPermitidas.includes('*')) {
-            return callback(null, true);
-        }
-
-        callback(new Error(`CORS bloqueado para a origem: ${origin}`));
-    },
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  maxAge: 86400,
 });
 
 module.exports = corsMiddleware;
