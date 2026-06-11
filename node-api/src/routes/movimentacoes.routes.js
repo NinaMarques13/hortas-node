@@ -1,6 +1,6 @@
 // =====================================================
 // 📊 Rotas de Movimentações de Estoque
-// Entradas e saídas de estoque
+// Converte: movimentacao.php, movimentacao_estoque.php
 // =====================================================
 
 const express = require('express');
@@ -9,59 +9,76 @@ const pool = require('../db');
 const validarTokenJwt = require('../middlewares/validadorJwt');
 
 // =====================================================
-// GET /api/movimentacoes/entradas — Lista entradas de estoque
-// Query: ?estoque_id=1&limite=20
+// GET /api/movimentacoes/estoque/:id — Histórico de movimentações
 // =====================================================
-router.get('/entradas', validarTokenJwt, async (req, res) => {
-    const { estoque_id, limite } = req.query;
-    const maxRegistros = parseInt(limite) || 50;
+router.get('/estoque/:id', async (req, res) => {
+    const idEstoque = parseInt(req.params.id, 10);
+    const periodo = parseInt(req.query.periodo, 10) || 90;
+
+    if (!idEstoque) {
+        return res.status(400).json({ status: 'erro', mensagem: 'id_estoque inválido.' });
+    }
 
     try {
-        let query = `
-            SELECT
-                ee.id_entrada,
-                ee.quantidade,
-                ee.motivo,
-                ee.dt_entrada,
-                p.nm_produto,
-                p.unidade_medida_padrao,
-                h.nome AS nome_horta,
-                pr.nome_produtor
-             FROM entradas_estoque ee
-             JOIN estoques e ON e.id_estoques = ee.estoques_id_estoques
-             JOIN produtos p ON p.id_produto = e.produto_id_produto
-             JOIN hortas h ON h.id_hortas = e.hortas_id_hortas
-             LEFT JOIN produtor pr ON pr.id_produtor = ee.produtor_id_produtor`;
+        const [entradas] = await pool.execute(
+            `SELECT quantidade, dt_entrada AS data, 'entrada' AS tipo, motivo
+             FROM entradas_estoque
+             WHERE estoques_id_estoques = ?
+               AND dt_entrada >= DATE_SUB(NOW(), INTERVAL ? DAY)
+             ORDER BY dt_entrada ASC`,
+            [idEstoque, periodo]
+        );
 
-        const params = [];
-        if (estoque_id) {
-            query += ' WHERE ee.estoques_id_estoques = ?';
-            params.push(estoque_id);
-        }
+        const [saidas] = await pool.execute(
+            `SELECT quantidade, dt_saida AS data, 'saida' AS tipo, motivo
+             FROM saidas_estoque
+             WHERE estoques_id_estoques = ?
+               AND dt_saida >= DATE_SUB(NOW(), INTERVAL ? DAY)
+             ORDER BY dt_saida ASC`,
+            [idEstoque, periodo]
+        );
 
-        query += ' ORDER BY ee.dt_entrada DESC LIMIT ?';
-        params.push(maxRegistros);
+        const movimentacoes = [...entradas, ...saidas].sort(
+            (a, b) => new Date(a.data) - new Date(b.data)
+        );
 
-        const [rows] = await pool.execute(query, params);
-        res.json({ status: 'sucesso', dados: rows });
+        res.json({ status: 'sucesso', movimentacoes });
     } catch (err) {
-        console.error('Erro ao listar entradas:', err.message);
-        res.status(500).json({ status: 'erro', mensagem: 'Erro no servidor.' });
+        console.error('Erro ao buscar movimentações:', err.message);
+        res.status(500).json({ status: 'erro', mensagem: 'Erro ao buscar movimentações.' });
     }
 });
 
 // =====================================================
-// POST /api/movimentacoes/entradas — Registrar entrada de estoque
-// Body: { estoques_id_estoques, quantidade, motivo }
+// POST /api/movimentacoes — Registrar entrada ou saída (requer autenticação)
 // =====================================================
-router.post('/entradas', validarTokenJwt, async (req, res) => {
-    const idProdutor = req.usuario?.id;
-    const { estoques_id_estoques, quantidade, motivo } = req.body;
+router.post('/', validarTokenJwt, async (req, res) => {
+    const { id_estoque, quantidade, tipo_movimentacao, motivo } = req.body;
 
-    if (!estoques_id_estoques || !quantidade) {
+    // id_produtor extraído do JWT — não do body (evita fraude)
+    const id_produtor = req.usuario?.id || req.usuario?.id_produtor;
+
+    // Validação
+    if (!id_estoque || !id_produtor || quantidade === undefined || !tipo_movimentacao || !motivo) {
         return res.status(400).json({
             status: 'erro',
-            mensagem: 'estoques_id_estoques e quantidade são obrigatórios.',
+            mensagem: 'Campos obrigatórios: id_estoque, quantidade, tipo_movimentacao e motivo.',
+        });
+    }
+
+    const qtd = Math.abs(parseFloat(quantidade));
+    if (qtd <= 0) {
+        return res.status(400).json({
+            status: 'erro',
+            mensagem: 'A quantidade deve ser maior que zero.',
+        });
+    }
+
+    const tipo = tipo_movimentacao.toLowerCase();
+    if (tipo !== 'entrada' && tipo !== 'saida') {
+        return res.status(400).json({
+            status: 'erro',
+            mensagem: "Tipo de movimentação inválido. Use 'entrada' ou 'saida'.",
         });
     }
 
@@ -70,140 +87,47 @@ router.post('/entradas', validarTokenJwt, async (req, res) => {
         conn = await pool.getConnection();
         await conn.beginTransaction();
 
-        // Registra a entrada
-        const [result] = await conn.execute(
-            `INSERT INTO entradas_estoque (estoques_id_estoques, quantidade, motivo, produtor_id_produtor)
-             VALUES (?, ?, ?, ?)`,
-            [estoques_id_estoques, quantidade, motivo || null, idProdutor]
-        );
+        if (tipo === 'entrada') {
+            // Registrar entrada
+            await conn.execute(
+                'INSERT INTO entradas_estoque (estoques_id_estoques, produtor_id_produtor, quantidade, motivo) VALUES (?, ?, ?, ?)',
+                [id_estoque, id_produtor, qtd, motivo]
+            );
 
-        // Atualiza a quantidade no estoque
-        await conn.execute(
-            'UPDATE estoques SET ds_quantidade = ds_quantidade + ? WHERE id_estoques = ?',
-            [quantidade, estoques_id_estoques]
-        );
+            // Atualizar estoque
+            await conn.execute(
+                'UPDATE estoques SET ds_quantidade = ds_quantidade + ? WHERE id_estoques = ?',
+                [qtd, id_estoque]
+            );
+        } else {
+            // Registrar saída
+            await conn.execute(
+                'INSERT INTO saidas_estoque (estoques_id_estoques, produtor_id_produtor, quantidade, motivo) VALUES (?, ?, ?, ?)',
+                [id_estoque, id_produtor, qtd, motivo]
+            );
+
+            // Atualizar estoque
+            await conn.execute(
+                'UPDATE estoques SET ds_quantidade = ds_quantidade - ? WHERE id_estoques = ?',
+                [qtd, id_estoque]
+            );
+        }
 
         await conn.commit();
 
-        res.status(201).json({
+        res.json({
             status: 'sucesso',
-            mensagem: 'Entrada registrada com sucesso!',
-            id_entrada: result.insertId,
+            mensagem: tipo === 'entrada'
+                ? 'Entrada de estoque registrada com sucesso.'
+                : 'Saída de estoque registrada com sucesso.',
         });
     } catch (err) {
         if (conn) await conn.rollback();
-        console.error('Erro ao registrar entrada:', err.message);
-        res.status(500).json({ status: 'erro', mensagem: 'Erro no servidor.' });
-    } finally {
-        if (conn) conn.release();
-    }
-});
-
-// =====================================================
-// GET /api/movimentacoes/saidas — Lista saídas de estoque
-// Query: ?estoque_id=1&limite=20
-// =====================================================
-router.get('/saidas', validarTokenJwt, async (req, res) => {
-    const { estoque_id, limite } = req.query;
-    const maxRegistros = parseInt(limite) || 50;
-
-    try {
-        let query = `
-            SELECT
-                se.id_saida,
-                se.quantidade,
-                se.motivo,
-                se.dt_saida,
-                p.nm_produto,
-                p.unidade_medida_padrao,
-                h.nome AS nome_horta,
-                pr.nome_produtor
-             FROM saidas_estoque se
-             JOIN estoques e ON e.id_estoques = se.estoques_id_estoques
-             JOIN produtos p ON p.id_produto = e.produto_id_produto
-             JOIN hortas h ON h.id_hortas = e.hortas_id_hortas
-             LEFT JOIN produtor pr ON pr.id_produtor = se.produtor_id_produtor`;
-
-        const params = [];
-        if (estoque_id) {
-            query += ' WHERE se.estoques_id_estoques = ?';
-            params.push(estoque_id);
-        }
-
-        query += ' ORDER BY se.dt_saida DESC LIMIT ?';
-        params.push(maxRegistros);
-
-        const [rows] = await pool.execute(query, params);
-        res.json({ status: 'sucesso', dados: rows });
-    } catch (err) {
-        console.error('Erro ao listar saídas:', err.message);
-        res.status(500).json({ status: 'erro', mensagem: 'Erro no servidor.' });
-    }
-});
-
-// =====================================================
-// POST /api/movimentacoes/saidas — Registrar saída de estoque
-// Body: { estoques_id_estoques, quantidade, motivo }
-// =====================================================
-router.post('/saidas', validarTokenJwt, async (req, res) => {
-    const idProdutor = req.usuario?.id;
-    const { estoques_id_estoques, quantidade, motivo } = req.body;
-
-    if (!estoques_id_estoques || !quantidade) {
-        return res.status(400).json({
+        console.error('Erro na movimentação:', err.message);
+        res.status(500).json({
             status: 'erro',
-            mensagem: 'estoques_id_estoques e quantidade são obrigatórios.',
+            mensagem: 'Erro no servidor: ' + err.message,
         });
-    }
-
-    let conn;
-    try {
-        conn = await pool.getConnection();
-        await conn.beginTransaction();
-
-        // Verifica se há quantidade suficiente
-        const [[estoque]] = await conn.execute(
-            'SELECT ds_quantidade FROM estoques WHERE id_estoques = ? FOR UPDATE',
-            [estoques_id_estoques]
-        );
-
-        if (!estoque) {
-            await conn.rollback();
-            return res.status(404).json({ status: 'erro', mensagem: 'Item de estoque não encontrado.' });
-        }
-
-        if (parseFloat(estoque.ds_quantidade) < parseFloat(quantidade)) {
-            await conn.rollback();
-            return res.status(400).json({
-                status: 'erro',
-                mensagem: `Quantidade insuficiente em estoque. Disponível: ${estoque.ds_quantidade}`,
-            });
-        }
-
-        // Registra a saída
-        const [result] = await conn.execute(
-            `INSERT INTO saidas_estoque (estoques_id_estoques, quantidade, motivo, produtor_id_produtor)
-             VALUES (?, ?, ?, ?)`,
-            [estoques_id_estoques, quantidade, motivo || null, idProdutor]
-        );
-
-        // Atualiza a quantidade no estoque
-        await conn.execute(
-            'UPDATE estoques SET ds_quantidade = ds_quantidade - ? WHERE id_estoques = ?',
-            [quantidade, estoques_id_estoques]
-        );
-
-        await conn.commit();
-
-        res.status(201).json({
-            status: 'sucesso',
-            mensagem: 'Saída registrada com sucesso!',
-            id_saida: result.insertId,
-        });
-    } catch (err) {
-        if (conn) await conn.rollback();
-        console.error('Erro ao registrar saída:', err.message);
-        res.status(500).json({ status: 'erro', mensagem: 'Erro no servidor.' });
     } finally {
         if (conn) conn.release();
     }

@@ -423,6 +423,7 @@
   <header>
     <div class="logo">Hortas<span>.</span></div>
     <div class="header-right">
+      <a href="/cep.html" style="color:rgba(255,255,255,0.7);font-size:12px;text-decoration:none;padding:8px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">📈 CEP</a>
       <span class="usuario-nome" id="usuario-nome"></span>
       <button class="btn-sair" onclick="sair()">Sair</button>
     </div>
@@ -479,7 +480,7 @@
 </div>
 
 <script>
-  const API = 'http://localhost:3000/api';
+  const API = `${window.location.protocol}//${window.location.hostname}:${window.location.port || 80}/api`;
   let token = localStorage.getItem('token');
 
   // Inicializa

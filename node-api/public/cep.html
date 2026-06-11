@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hortas — CEP · Controle Estatístico</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --verde:       #1a4a1a;
+    --verde-meio:  #2d6e2d;
+    --verde-claro: #4caf50;
+    --lima:        #a8d500;
+    --creme:       #f5f0e8;
+    --branco:      #fafaf7;
+    --cinza:       #6b7280;
+    --perigo:      #dc2626;
+    --alerta:      #f59e0b;
+    --sombra:      rgba(26,74,26,0.10);
+  }
+
+  body { font-family: 'DM Mono', monospace; background: var(--creme); color: var(--verde); min-height: 100vh; }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--verde);
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--branco); }
+  .logo span { color: var(--lima); }
+  .header-nav { display: flex; gap: 16px; align-items: center; }
+  .nav-link {
+    color: rgba(255,255,255,0.7); font-size: 13px; text-decoration: none;
+    padding: 8px 14px; border-radius: 8px; transition: background 0.2s;
+    border: 1px solid transparent;
+  }
+  .nav-link:hover  { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-link.active { background: rgba(168,213,0,0.2); color: var(--lima); border-color: rgba(168,213,0,0.3); }
+
+  /* ── MAIN ── */
+  main { padding: 36px 40px; max-width: 1280px; margin: 0 auto; }
+
+  .page-title  { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px; }
+  .page-sub    { color: var(--cinza); font-size: 13px; margin-bottom: 32px; }
+
+  /* ── CONTROLES ── */
+  .controls {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 32px; flex-wrap: wrap;
+  }
+  .controls label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--cinza); }
+  .controls select, .controls input {
+    font-family: 'DM Mono', monospace; font-size: 13px;
+    padding: 8px 14px; border: 2px solid #ddd6c8; border-radius: 10px;
+    background: var(--branco); color: var(--verde); outline: none;
+    transition: border-color 0.2s;
+  }
+  .controls select:focus, .controls input:focus { border-color: var(--lima); }
+  .btn {
+    padding: 10px 22px; border: none; border-radius: 10px; cursor: pointer;
+    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .btn:hover   { opacity: 0.85; }
+  .btn:active  { transform: scale(0.97); }
+  .btn-primary { background: var(--verde); color: var(--lima); }
+  .btn-ghost   { background: transparent; border: 2px solid var(--verde); color: var(--verde); }
+
+  /* ── SEÇÃO ── */
+  .secao-titulo {
+    font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700;
+    color: var(--verde); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .sep { border: none; border-top: 2px solid #ede8dc; margin: 36px 0; }
+
+  /* ── CARDS KPI ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 36px; }
+  .kpi-card {
+    background: var(--branco); border-radius: 18px; padding: 24px 20px;
+    box-shadow: 0 4px 14px var(--sombra); position: relative; overflow: hidden;
+    animation: fadeUp 0.4s ease both;
+  }
+  .kpi-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: var(--lima); border-radius: 18px 18px 0 0;
+  }
+  .kpi-card:nth-child(2)::before { background: var(--verde-claro); }
+  .kpi-card:nth-child(3)::before { background: var(--alerta); }
+  .kpi-card:nth-child(4)::before { background: #06b6d4; }
+  .kpi-card:nth-child(5)::before { background: #8b5cf6; }
+  .kpi-icon  { font-size: 24px; margin-bottom: 12px; display: block; }
+  .kpi-valor { font-family: 'Syne', sans-serif; font-size: 36px; font-weight: 800; line-height: 1; margin-bottom: 6px; }
+  .kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--cinza); }
+  .kpi-badge {
+    display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+  }
+  .badge-ok     { background: #dcfce7; color: #166534; }
+  .badge-alerta { background: #fef3c7; color: #92400e; }
+  .badge-perigo { background: #fee2e2; color: #991b1b; }
+
+  /* ── CARDS DE CARTA ── */
+  .cartas-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 24px; }
+  .carta-card {
+    background: var(--branco); border-radius: 20px; padding: 28px;
+    box-shadow: 0 4px 16px var(--sombra); animation: fadeUp 0.5s ease both;
+  }
+  .carta-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; gap: 12px; }
+  .carta-nome   { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+  .carta-desc   { font-size: 11px; color: var(--cinza); margin-top: 4px; }
+  .carta-stats  { text-align: right; font-size: 11px; color: var(--cinza); white-space: nowrap; }
+  .carta-fora   { font-size: 20px; font-weight: 800; font-family: 'Syne', sans-serif; }
+  .carta-fora.danger { color: var(--perigo); }
+  .carta-fora.ok     { color: var(--verde-claro); }
+  .canvas-wrap  { position: relative; height: 200px; }
+
+  /* ── ESTOQUE / HORTA ── */
+  .horta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(480px, 1fr)); gap: 24px; margin-top: 24px; }
+
+  /* ── LOADING / EMPTY ── */
+  .loading-block {
+    display: flex; align-items: center; justify-content: center;
+    height: 200px; color: var(--cinza); font-size: 14px;
+    animation: pulse 1.5s infinite;
+  }
+  .empty-block {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 160px; color: var(--cinza); font-size: 13px; gap: 8px;
+  }
+  .empty-block span { font-size: 36px; }
+
+  /* ── TABELA FREQUÊNCIA ── */
+  .freq-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 16px; }
+  .freq-table th { background: var(--creme); padding: 8px 12px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+  .freq-table td { padding: 8px 12px; border-bottom: 1px solid #ede8dc; }
+  .freq-bar { height: 6px; background: var(--lima); border-radius: 3px; margin-top: 4px; }
+
+  @keyframes fadeUp { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform: translateY(0); } }
+  @keyframes pulse  { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+  @media (max-width: 768px) {
+    main { padding: 20px; }
+    header { padding: 0 20px; }
+    .cartas-grid, .horta-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Hortas<span>.</span></div>
+  <nav class="header-nav">
+    <a href="/dashboard.html" class="nav-link">📊 Dashboard</a>
+    <a href="/cep.html" class="nav-link active">📈 CEP</a>
+  </nav>
+</header>
+
+<main>
+  <div class="page-title">📈 Controle Estatístico de Processos</div>
+  <div class="page-sub">Cartas de controle e KPIs operacionais — análise estatística da plataforma</div>
+
+  <!-- Controles -->
+  <div class="controls">
+    <label>Período</label>
+    <select id="selPeriodo">
+      <option value="30">Últimos 30 dias</option>
+      <option value="90">Últimos 90 dias</option>
+      <option value="180" selected>Últimos 180 dias</option>
+      <option value="365">Último ano</option>
+    </select>
+
+    <label style="margin-left:12px">Horta</label>
+    <select id="selHorta">
+      <option value="">Todas (operacional)</option>
+    </select>
+
+    <button class="btn btn-primary" onclick="carregar()">↻ Atualizar</button>
+  </div>
+
+  <!-- KPIs -->
+  <div class="secao-titulo">🎯 KPIs Operacionais</div>
+  <div class="kpi-grid" id="kpiGrid">
+    <div class="loading-block">Carregando métricas...</div>
+  </div>
+
+  <!-- Cartas operacionais -->
+  <div id="cartasOperacao">
+    <div class="secao-titulo">📉 Cartas de Controle Operacionais</div>
+    <div class="cartas-grid" id="cartasGrid">
+      <div class="loading-block">Aguardando dados...</div>
+    </div>
+  </div>
+
+  <hr class="sep">
+
+  <!-- CEP por horta -->
+  <div class="secao-titulo">🌱 CEP por Horta — Movimentações de Estoque</div>
+  <div class="horta-grid" id="hortaGrid">
+    <div class="loading-block">Carregando dados da horta...</div>
+  </div>
+
+</main>
+
+<script>
+// ────────────────────────────────────────────────────
+// Config
+// ────────────────────────────────────────────────────
+const token = localStorage.getItem('token');
+const API   = `${location.protocol}//${location.hostname}:${location.port || 80}/api`;
+
+const CHART_DEFAULTS = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y?.toFixed(2)}` } } },
+  scales: {
+    x: { ticks: { font: { family: 'DM Mono', size: 9 }, maxRotation: 45 }, grid: { display: false } },
+    y: { ticks: { font: { family: 'DM Mono', size: 10 } }, grid: { color: '#ede8dc' } },
+  },
+};
+
+const chartsCache = {};
+
+async function get(path) {
+  const res = await fetch(API + path, { headers: { Authorization: `Bearer ${token}` } });
+  if (res.status === 401) { location.href = '/dashboard.html'; return null; }
+  return res.json();
+}
+
+// ────────────────────────────────────────────────────
+// Carregar hortas no select
+// ────────────────────────────────────────────────────
+async function carregarHortas() {
+  const data = await get('/hortas');
+  const sel  = document.getElementById('selHorta');
+  if (!data?.hortas?.length) return;
+  data.hortas.forEach(h => {
+    const opt = document.createElement('option');
+    opt.value = h.id_hortas;
+    opt.textContent = h.nome;
+    sel.appendChild(opt);
+  });
+}
+
+// ────────────────────────────────────────────────────
+// Main loader
+// ────────────────────────────────────────────────────
+async function carregar() {
+  const periodo  = document.getElementById('selPeriodo').value;
+  const idHorta  = document.getElementById('selHorta').value;
+
+  // Destrói charts anteriores
+  Object.values(chartsCache).forEach(c => c?.destroy());
+
+  if (!idHorta) {
+    await carregarOperacional(periodo);
+    document.getElementById('cartasOperacao').style.display = '';
+  } else {
+    document.getElementById('cartasOperacao').style.display = 'none';
+    limparKpis();
+  }
+
+  await carregarHortaCEP(idHorta || null, periodo);
+}
+
+// ────────────────────────────────────────────────────
+// CEP Operacional
+// ────────────────────────────────────────────────────
+async function carregarOperacional(periodo) {
+  document.getElementById('kpiGrid').innerHTML = '<div class="loading-block">Calculando KPIs...</div>';
+  document.getElementById('cartasGrid').innerHTML = '<div class="loading-block">Calculando cartas...</div>';
+
+  const data = await get(`/cep/operacao?periodo=${periodo}`);
+  if (!data) return;
+
+  if (!data.kpis) {
+    document.getElementById('kpiGrid').innerHTML = `<div class="empty-block"><span>📭</span>${data.mensagem || 'Sem dados no período.'}</div>`;
+    document.getElementById('cartasGrid').innerHTML = '';
+    return;
+  }
+
+  renderKpis(data);
+  renderCartasOperacao(data);
+}
+
+function limparKpis() {
+  document.getElementById('kpiGrid').innerHTML = '<div class="empty-block"><span>🌱</span>Selecione "Todas" para ver os KPIs operacionais.</div>';
+}
+
+function renderKpis(d) {
+  const k = d.kpis;
+  const npsClass = k.nps >= 50 ? 'badge-ok' : k.nps >= 0 ? 'badge-alerta' : 'badge-perigo';
+  const convClass = k.taxa_conversao >= 70 ? 'badge-ok' : k.taxa_conversao >= 50 ? 'badge-alerta' : 'badge-perigo';
+
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-card">
+      <span class="kpi-icon">📦</span>
+      <div class="kpi-valor">${k.total_pedidos.toLocaleString('pt-BR')}</div>
+      <div class="kpi-label">Total de pedidos</div>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-icon">✅</span>
+      <div class="kpi-valor">${k.taxa_conversao}%</div>
+      <div class="kpi-label">Taxa de conversão</div>
+      <span class="kpi-badge ${convClass}">${k.taxa_conversao >= 70 ? 'Ótimo' : k.taxa_conversao >= 50 ? 'Regular' : 'Crítico'}</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-icon">😊</span>
+      <div class="kpi-valor">${k.nps}</div>
+      <div class="kpi-label">NPS (Net Promoter Score)</div>
+      <span class="kpi-badge ${npsClass}">${k.nps >= 50 ? 'Excelente' : k.nps >= 0 ? 'Neutro' : 'Detrator'}</span>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-icon">⏱️</span>
+      <div class="kpi-valor">${k.tmr}h</div>
+      <div class="kpi-label">TMR — Tempo médio de resposta</div>
+    </div>
+  `;
+}
+
+function renderCartasOperacao(d) {
+  const cartas = [
+    { key: 'entrega', nome: 'I-Chart — Tempo de Entrega', desc: 'Minutos por pedido finalizado', sufixo: 'min' },
+    { key: 'aceite',  nome: 'I-Chart — Tempo de Aceite',  desc: 'Minutos do pedido ao aceite',  sufixo: 'min' },
+    { key: 'preparo', nome: 'X̄-R — Tempo de Preparo',    desc: 'Médias semanais (subgrupos)',   sufixo: 'min', xr: true },
+    { key: 'avarias', nome: 'Carta P — Taxa de Avarias', desc: 'Fração defeituosa por semana', sufixo: '%',   p: true },
+    { key: 'ruptura', nome: 'Carta C — Rupturas',        desc: 'Contagem de rupturas semanais', sufixo: '' },
+  ];
+
+  const html = cartas.map(c => {
+    const carta = d[c.key];
+    if (!carta) return `<div class="carta-card"><div class="carta-nome">${c.nome}</div><div class="empty-block"><span>📭</span>Sem dados suficientes</div></div>`;
+    const fora  = carta.pontos_fora_controle ?? carta.pontos?.filter(p => p.fora_controle)?.length ?? 0;
+    return `
+      <div class="carta-card">
+        <div class="carta-header">
+          <div>
+            <div class="carta-nome">${c.nome}</div>
+            <div class="carta-desc">${c.desc} · n = ${carta.n ?? carta.pontos?.length ?? '?'}</div>
+          </div>
+          <div class="carta-stats">
+            <div class="carta-fora ${fora > 0 ? 'danger' : 'ok'}">${fora}</div>
+            <div>fora de controle</div>
+          </div>
+        </div>
+        <div class="canvas-wrap"><canvas id="chart_${c.key}"></canvas></div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('cartasGrid').innerHTML = html;
+
+  // Renderiza cada chart
+  cartas.forEach(c => {
+    const carta = d[c.key];
+    if (!carta) return;
+    const ctx = document.getElementById(`chart_${c.key}`)?.getContext('2d');
+    if (!ctx) return;
+
+    let labels, valores, lc, lsc, lic;
+
+    if (c.xr) {
+      // Carta X-R: usa xbar
+      labels = carta.xbar?.pontos?.map((_, i) => `S${i+1}`) ?? [];
+      valores = carta.xbar?.pontos?.map(p => p.valor) ?? [];
+      lc  = carta.xbar?.lc  ?? carta.xBarBar;
+      lsc = carta.xbar?.lsc ?? carta.xBarBar;
+      lic = carta.xbar?.lic ?? carta.xBarBar;
+    } else if (c.p) {
+      labels = carta.pontos?.map((_, i) => `S${i+1}`) ?? [];
+      valores = carta.pontos?.map(p => parseFloat((p.valor * 100).toFixed(2))) ?? [];
+      lc  = parseFloat((carta.lc  * 100).toFixed(2));
+      lsc = parseFloat((carta.lsc * 100).toFixed(2));
+      lic = parseFloat((carta.lic * 100).toFixed(2));
+    } else {
+      labels = carta.pontos?.map((_, i) => `${i+1}`) ?? [];
+      valores = carta.pontos?.map(p => p.valor) ?? [];
+      lc  = carta.lc  ?? carta.cBar;
+      lsc = carta.lsc;
+      lic = carta.lic;
+    }
+
+    const fora = carta.pontos?.map(p => p.fora_controle) ?? [];
+
+    chartsCache[c.key] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Valor',
+            data: valores,
+            borderColor: '#2d6e2d',
+            backgroundColor: valores.map((_, i) => fora[i] ? 'rgba(220,38,38,0.8)' : 'rgba(45,110,45,0.8)'),
+            pointRadius: 5,
+            pointHoverRadius: 7,
+            tension: 0.3,
+            borderWidth: 2,
+          },
+          { label: 'LSC', data: Array(labels.length).fill(lsc), borderColor: '#dc2626', borderDash: [6,3], borderWidth: 1.5, pointRadius: 0 },
+          { label: 'LC',  data: Array(labels.length).fill(lc),  borderColor: '#a8d500', borderDash: [4,2], borderWidth: 1.5, pointRadius: 0 },
+          { label: 'LIC', data: Array(labels.length).fill(lic), borderColor: '#dc2626', borderDash: [6,3], borderWidth: 1.5, pointRadius: 0 },
+        ],
+      },
+      options: {
+        ...CHART_DEFAULTS,
+        plugins: {
+          ...CHART_DEFAULTS.plugins,
+          legend: { display: true, labels: { font: { family: 'DM Mono', size: 10 }, boxWidth: 16, padding: 10 } },
+        },
+      },
+    });
+  });
+}
+
+// ────────────────────────────────────────────────────
+// CEP por Horta
+// ────────────────────────────────────────────────────
+async function carregarHortaCEP(idHorta, periodo) {
+  const grid = document.getElementById('hortaGrid');
+  grid.innerHTML = '<div class="loading-block">Calculando carta de controle da horta...</div>';
+
+  if (!idHorta) {
+    // Carrega todas as hortas visíveis
+    const hortas = await get('/hortas');
+    if (!hortas?.hortas?.length) {
+      grid.innerHTML = '<div class="empty-block"><span>🌿</span>Nenhuma horta encontrada.</div>';
+      return;
+    }
+    const promises = hortas.hortas.slice(0, 4).map(h => get(`/cep/horta/${h.id_hortas}?periodo=${periodo}`).then(d => ({ ...d, _nome: h.nome, _id: h.id_hortas })));
+    const results  = await Promise.all(promises);
+    renderHortaCards(results);
+  } else {
+    const data = await get(`/cep/horta/${idHorta}?periodo=${periodo}`);
+    const sel  = document.getElementById('selHorta');
+    const nome = sel.options[sel.selectedIndex]?.text ?? `Horta #${idHorta}`;
+    renderHortaCards([{ ...data, _nome: nome, _id: idHorta }]);
+  }
+}
+
+function renderHortaCards(results) {
+  const grid = document.getElementById('hortaGrid');
+  grid.innerHTML = '';
+
+  results.forEach(data => {
+    if (!data || data.n === 0) {
+      grid.innerHTML += `
+        <div class="carta-card">
+          <div class="carta-nome">🌱 ${data?._nome ?? 'Horta'}</div>
+          <div class="empty-block"><span>📭</span>Sem movimentações no período.</div>
+        </div>`;
+      return;
+    }
+
+    const fora = data.pontos_fora_controle ?? 0;
+    const id   = `chart_horta_${data._id}`;
+
+    // ── Agrega dados brutos por dia (reduz ruído e melhora leitura) ──
+    const byDay = {};
+    (data.dados_brutos ?? []).forEach(m => {
+      const d   = new Date(m.data);
+      const key = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+      if (!byDay[key]) byDay[key] = { soma: 0, cnt: 0 };
+      byDay[key].soma += parseFloat(m.quantidade);
+      byDay[key].cnt++;
+    });
+    const diasLabels = Object.keys(byDay);
+    const diasVals   = diasLabels.map(k => parseFloat((byDay[k].soma / byDay[k].cnt).toFixed(2)));
+
+    // Recalcula LSC/LIC com base nos valores diários
+    const media  = data.lc;
+    const lsc    = data.lsc;
+    const lic    = data.lic;
+    const nDias  = diasLabels.length;
+
+    grid.innerHTML += `
+      <div class="carta-card">
+        <div class="carta-header">
+          <div>
+            <div class="carta-nome">🌱 ${data._nome}</div>
+            <div class="carta-desc">I-Chart · média diária · ${nDias} dias · DP = ${data.desvio_padrao} · CV = ${data.coeficiente_variacao}%</div>
+          </div>
+          <div class="carta-stats">
+            <div class="carta-fora ${fora > 0 ? 'danger' : 'ok'}">${fora}</div>
+            <div>fora controle</div>
+          </div>
+        </div>
+        <div class="canvas-wrap"><canvas id="${id}"></canvas></div>
+        <p style="font-size:11px;color:var(--cinza);margin-top:12px;">💡 ${data.interpretacao || ''}</p>
+      </div>`;
+
+    // Armazena para plotar depois do innerHTML
+    requestAnimationFrame(() => {
+      const ctx = document.getElementById(id)?.getContext('2d');
+      if (!ctx) return;
+
+      chartsCache[`horta_${data._id}`] = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: diasLabels,
+          datasets: [
+            {
+              label: 'Média diária',
+              data: diasVals,
+              borderColor: '#2d6e2d',
+              backgroundColor: diasVals.map(v => (v > lsc || v < lic) ? 'rgba(220,38,38,0.85)' : 'rgba(45,110,45,0.85)'),
+              pointRadius: nDias > 60 ? 3 : 5,
+              pointHoverRadius: 7,
+              tension: 0.35,
+              borderWidth: 2,
+              fill: false,
+            },
+            { label: `LSC ${lsc}`, data: Array(nDias).fill(lsc), borderColor: '#dc2626', borderDash: [6,3], borderWidth: 1.5, pointRadius: 0, fill: false },
+            { label: `LC ${media}`, data: Array(nDias).fill(media), borderColor: '#a8d500', borderDash: [4,2], borderWidth: 1.5, pointRadius: 0, fill: false },
+            { label: `LIC ${lic}`, data: Array(nDias).fill(lic), borderColor: '#dc2626', borderDash: [6,3], borderWidth: 1.5, pointRadius: 0, fill: false },
+          ],
+        },
+        options: {
+          ...CHART_DEFAULTS,
+          plugins: {
+            legend: { display: true, labels: { font: { family: 'DM Mono', size: 10 }, boxWidth: 14, padding: 10 } },
+            tooltip: { callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y}` } },
+          },
+          scales: {
+            x: {
+              ticks: {
+                font: { family: 'DM Mono', size: nDias > 60 ? 8 : 10 },
+                maxRotation: nDias > 45 ? 60 : 30,
+                maxTicksLimit: 20,
+              },
+              grid: { display: false },
+            },
+            y: {
+              ticks: { font: { family: 'DM Mono', size: 10 } },
+              grid: { color: '#ede8dc' },
+            },
+          },
+        },
+      });
+    });
+  });
+}
+
+// ────────────────────────────────────────────────────
+// Init
+// ────────────────────────────────────────────────────
+(async () => {
+  await carregarHortas();
+  await carregar();
+})();
+</script>
+</body>
+</html>
